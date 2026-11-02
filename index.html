@@ -255,6 +255,12 @@ footer { color: var(--muted); font-size: .8rem; }
   </div>
 
   <section id="view-over" class="cols-wrap" style="display:flex;flex-direction:column;gap:16px">
+    <div class="panel">
+      <h2>Deadlines ahead, by topic</h2>
+      <p class="hint">Each dot is a deadline; hollow dots are predicted dates. Hover or tap for details; click to open the call.</p>
+      <div class="chart" id="chart"></div>
+      <div class="legend"><span><span class="dot" style="background:var(--lead)"></span>You can lead</span><span><span class="dot" style="background:var(--pi)"></span>Via PI / postdoc</span><span><span class="dot" style="background:transparent;border:1.5px solid var(--muted)"></span>Predicted date</span></div>
+    </div>
     <div class="cols">
       <div class="panel">
         <h2>You can apply yourself</h2>
@@ -271,12 +277,6 @@ footer { color: var(--muted); font-size: .8rem; }
       <h2>Predicted, not yet announced</h2>
       <p class="hint">Dates are estimated from previous years' cycles. Check the funder page before planning around them. Calls you can apply to yourself come first.</p>
       <ol class="rank" id="rank-pred"></ol>
-    </div>
-    <div class="panel">
-      <h2>Deadlines ahead, by topic</h2>
-      <p class="hint">Each dot is a deadline; hollow dots are predicted dates. Hover or tap for details; click to open the call.</p>
-      <div class="chart" id="chart"></div>
-      <div class="legend"><span><span class="dot" style="background:var(--lead)"></span>You can lead</span><span><span class="dot" style="background:var(--pi)"></span>Via PI / postdoc</span><span><span class="dot" style="background:transparent;border:1.5px solid var(--muted)"></span>Predicted date</span></div>
     </div>
   </section>
 

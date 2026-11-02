@@ -4,7 +4,7 @@
 
 Grant Radar lists research-funding calls in gut and food microbiome, diet × gut, gut mycobiome, bioinformatics and general schemes. Every call is open to researchers at Polish institutions, and the list shows which calls a PhD student can lead and which need someone else (a PI, a consortium or a company) to apply.
 
-- **Overview:** two ranked shortlists of announced calls (calls you can apply for yourself, and team & consortium calls someone else leads), a separate list of *predicted* calls that aren't announced yet, and a timeline of deadlines by topic (hollow dots = predicted dates).
+- **Overview:** two ranked shortlists of announced calls (calls you can apply for yourself, and team & consortium calls someone else leads), a separate list of *predicted* calls that aren't announced yet, and a timeline of deadlines by topic at the top (hollow dots = predicted dates).
 - **Type and who-can-apply filters:** narrow everything to research grants, conference & travel funding or training & lab visits, and to who may apply (PhD student, early-career PhD, senior PI, consortium, industry, …).
 - **All calls:** filter by topic, route or status, hide predicted calls, search, and open any call for its type, who can apply, eligibility, deadline notes and links.
 - **Find calls for my field:** describe your own search (topics, country, career stage, types of funding). The app writes a prompt for Claude; Claude searches the web and gives you a `grants.json`; you load it back into the app. Your list then replaces the built-in one in your browser.
