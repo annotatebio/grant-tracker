@@ -1,0 +1,501 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Grant Tracker</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,500&display=swap">
+<style>
+/* Layout: one working column — summary strip, filter bar, then a list or month calendar; details expand in place. */
+:root {
+  --bg: #f6f7f4; --panel: #ffffff; --ink: #1d2320; --muted: #5d6762; --line: #dfe3dd;
+  --accent: #2f6d5a; --accent-ink: #ffffff; --accent-soft: #e3efe9;
+  --ok: #2c7a4b; --warn: #a7620a; --bad: #b3261e; --closed: #8b938e;
+  --s-watch: #3d6fb6; --s-prep: #a7620a; --s-sub: #6b4fb0; --s-won: #2c7a4b; --s-no: #8b938e;
+  --f-display: "Newsreader", Georgia, serif; --f-body: "IBM Plex Sans", system-ui, sans-serif; --f-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --r: 8px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121614; --panel: #1a201d; --ink: #e6ebe7; --muted: #9aa49e; --line: #2c3430;
+  --accent: #7cc4a8; --accent-ink: #0f1a15; --accent-soft: #1f3129;
+  --ok: #6cc28c; --warn: #e0a24a; --bad: #f08a80; --closed: #6f7873;
+  --s-watch: #7fa8e6; --s-prep: #e0a24a; --s-sub: #b29be8; --s-won: #6cc28c; --s-no: #6f7873; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #121614; --panel: #1a201d; --ink: #e6ebe7; --muted: #9aa49e; --line: #2c3430;
+  --accent: #7cc4a8; --accent-ink: #0f1a15; --accent-soft: #1f3129;
+  --ok: #6cc28c; --warn: #e0a24a; --bad: #f08a80; --closed: #6f7873;
+  --s-watch: #7fa8e6; --s-prep: #e0a24a; --s-sub: #b29be8; --s-won: #6cc28c; --s-no: #6f7873; color-scheme: dark }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--f-body); }
+.wrap { max-width: 68rem; margin: 0 auto; padding-block: 24px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 20px; }
+header.top { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px; }
+h1 { font-family: var(--f-display); font-weight: 500; font-size: 2rem; line-height: 1.1; margin: 0; text-wrap: balance; }
+.sub { color: var(--muted); margin: 4px 0 0; font-size: .9rem; }
+button, input, select, textarea { font: inherit; color: inherit; }
+.btn { border: 1px solid var(--line); background: var(--panel); border-radius: var(--r); padding: 7px 12px; cursor: pointer; font-size: .875rem; }
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 500; }
+.btn:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn[disabled] { opacity: .5; cursor: default; }
+
+.strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr)); gap: 8px; }
+.stat { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 10px 12px; text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 2px; }
+.stat[aria-pressed="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.stat .n { font-family: var(--f-display); font-size: 1.6rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.stat .l { font-size: .78rem; color: var(--muted); display: flex; align-items: center; gap: 6px; letter-spacing: .02em; }
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: none; }
+
+.bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.bar input[type=search] { flex: 1 1 14rem; min-width: 0; padding: 7px 10px; border: 1px solid var(--line); border-radius: var(--r); background: var(--panel); }
+.bar select { padding: 7px 8px; border: 1px solid var(--line); border-radius: var(--r); background: var(--panel); max-width: 100%; }
+.bar label.chk { font-size: .85rem; color: var(--muted); display: inline-flex; gap: 6px; align-items: center; }
+.tabs { display: inline-flex; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+.tabs button { border: 0; background: var(--panel); padding: 7px 14px; cursor: pointer; font-size: .875rem; }
+.tabs button[aria-selected="true"] { background: var(--accent-soft); color: var(--ink); font-weight: 600; }
+.count { font-size: .82rem; color: var(--muted); margin-left: auto; }
+
+.list { display: flex; flex-direction: column; gap: 8px; }
+.call { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); border-left: 4px solid var(--line); }
+.call[data-status="Watching"] { border-left-color: var(--s-watch); }
+.call[data-status="Preparing"] { border-left-color: var(--s-prep); }
+.call[data-status="Submitted"] { border-left-color: var(--s-sub); }
+.call[data-status="Awarded"] { border-left-color: var(--s-won); }
+.call[data-status="Not applying"] { border-left-color: var(--s-no); opacity: .75; }
+.call .row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; padding: 12px 14px; align-items: start; }
+.call .name { font-weight: 600; font-size: 1rem; line-height: 1.35; min-width: 0; }
+.call .name a { color: inherit; text-decoration: none; border-bottom: 1px solid var(--line); }
+.call .name a:hover { border-bottom-color: var(--accent); color: var(--accent); }
+.call .meta { grid-column: 1; color: var(--muted); font-size: .84rem; display: flex; flex-wrap: wrap; gap: 4px 10px; min-width: 0; }
+.call .right { grid-row: 1 / span 2; grid-column: 2; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.dl { font-family: var(--f-mono); font-size: .82rem; text-align: right; white-space: nowrap; }
+.dl .days { display: block; font-weight: 500; }
+.urgent { color: var(--bad); } .soon { color: var(--warn); } .past { color: var(--closed); }
+.badge { font-size: .74rem; border-radius: 999px; padding: 1px 8px; border: 1px solid var(--line); white-space: nowrap; }
+.badge.lead { border-color: var(--ok); color: var(--ok); }
+.badge.mine { border-color: var(--accent); color: var(--accent); }
+.badge.est { border-style: dashed; }
+select.status { padding: 4px 6px; border: 1px solid var(--line); border-radius: var(--r); background: var(--panel); font-size: .82rem; }
+details.more > summary { list-style: none; cursor: pointer; padding: 0 14px 10px; font-size: .82rem; color: var(--accent); width: max-content; }
+details.more > summary::-webkit-details-marker { display: none; }
+details.more[open] > summary { padding-bottom: 6px; }
+.body { padding: 0 14px 14px; display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 16px; border-top: 1px dashed var(--line); padding-top: 12px; }
+@media (max-width: 680px) { .body { grid-template-columns: minmax(0, 1fr); } .call .row { grid-template-columns: minmax(0, 1fr); } .call .right { grid-row: auto; grid-column: 1; flex-direction: row; flex-wrap: wrap; align-items: center; } .dl { text-align: left; } .dl .days { display: inline; margin-left: 6px; } }
+dl.facts { margin: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 12px; font-size: .86rem; }
+dl.facts dt { color: var(--muted); }
+dl.facts dd { margin: 0; overflow-wrap: anywhere; }
+.links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.links a { font-size: .84rem; color: var(--accent); }
+.notes label { font-size: .78rem; color: var(--muted); letter-spacing: .03em; text-transform: uppercase; display: flex; justify-content: space-between; }
+.notes textarea { width: 100%; min-height: 7.5rem; resize: vertical; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg); font-size: .9rem; margin-top: 4px; }
+.why { font-size: .86rem; background: var(--accent-soft); border-radius: 6px; padding: 8px 10px; margin: 0 0 10px; }
+.own-actions { display: flex; gap: 8px; margin-top: 10px; }
+.empty { background: var(--panel); border: 1px dashed var(--line); border-radius: var(--r); padding: 28px; text-align: center; color: var(--muted); }
+
+/* calendar */
+.cal { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 12px; }
+.cal-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.cal-head h2 { font-family: var(--f-display); font-weight: 500; font-size: 1.3rem; margin: 0; }
+.grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.dow { font-size: .72rem; color: var(--muted); text-align: center; letter-spacing: .06em; text-transform: uppercase; padding-bottom: 2px; }
+.day { min-height: 5.2rem; border: 1px solid var(--line); border-radius: 6px; padding: 4px; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.day.out { opacity: .4; }
+.day.today { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.day .d { font-family: var(--f-mono); font-size: .72rem; color: var(--muted); }
+.ev { font-size: .72rem; line-height: 1.25; border-radius: 4px; padding: 2px 4px; background: var(--accent-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-left: 3px solid var(--line); cursor: pointer; text-align: left; border-top: 0; border-right: 0; border-bottom: 0; width: 100%; }
+@media (max-width: 560px) { .day { min-height: 3.2rem; } .ev { font-size: 0; padding: 0; height: 6px; } }
+.agenda { margin-top: 14px; display: flex; flex-direction: column; gap: 6px; }
+.agenda h3 { font-size: .8rem; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin: 0; font-weight: 500; }
+.ag { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr) auto; gap: 10px; align-items: baseline; padding: 6px 0; border-top: 1px solid var(--line); font-size: .9rem; }
+.ag .when { font-family: var(--f-mono); font-size: .8rem; }
+.ag a { color: var(--accent); font-size: .8rem; white-space: nowrap; }
+
+/* add/edit panel */
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; }
+.panel h2 { font-family: var(--f-display); font-weight: 500; font-size: 1.3rem; margin: 0 0 12px; }
+.form { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: 12px; }
+.form label { display: flex; flex-direction: column; gap: 4px; font-size: .8rem; color: var(--muted); }
+.form input, .form select, .form textarea { padding: 7px 9px; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg); color: var(--ink); font-size: .9rem; }
+.form .wide { grid-column: 1 / -1; }
+.form-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; align-items: center; }
+.err { color: var(--bad); font-size: .85rem; }
+.toast { position: fixed; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: var(--r); font-size: .85rem; z-index: 20; }
+.foot { font-size: .8rem; color: var(--muted); }
+.foot a { color: var(--accent); }
+@media (prefers-reduced-motion: no-preference) { .call { transition: border-color .2s; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Grant Tracker</h1>
+      <p class="sub" id="lede">Gut &amp; food microbiome, mycobiome and bioinformatics calls you can apply to from Kraków.</p>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" id="exportBtn" type="button" hidden>Export deadlines (.csv)</button>
+      <button class="btn primary" id="addBtn" type="button" hidden>Add a call</button>
+    </div>
+  </header>
+
+  <section class="strip" id="strip" aria-label="Your pipeline"></section>
+
+  <section class="panel" id="formPanel" hidden aria-labelledby="formTitle">
+    <h2 id="formTitle">Add a call</h2>
+    <form id="callForm" novalidate>
+      <div class="form">
+        <label class="wide">Call name<input id="f-call" required maxlength="200" placeholder="e.g. Microbiome Society travel grant 2027"></label>
+        <label>Funder<input id="f-funder" maxlength="120"></label>
+        <label>Deadline<input id="f-deadline" type="date" required></label>
+        <label>Link to call page<input id="f-url" type="url" placeholder="https://…"></label>
+        <label>Amount<input id="f-amount" maxlength="120"></label>
+        <label>Topic<select id="f-topics">
+          <option>Gut microbiome</option><option>Diet × gut</option><option>Fungi / mycobiome</option><option>Food microbiome</option><option>Bioinformatics</option><option selected>General</option>
+        </select></label>
+        <label>Who applies<select id="f-route">
+          <option>You can lead</option><option>You can lead (conditions)</option><option>Via PI / postdoc</option>
+        </select></label>
+        <label class="wide">Short description<textarea id="f-summary" rows="2" maxlength="600"></textarea></label>
+      </div>
+      <div class="form-actions">
+        <button class="btn primary" type="submit" id="saveCall">Save call</button>
+        <button class="btn" type="button" id="cancelForm">Cancel</button>
+        <span class="err" id="formErr" role="alert"></span>
+      </div>
+    </form>
+  </section>
+
+  <section class="bar" aria-label="Filters">
+    <div class="tabs" role="tablist">
+      <button role="tab" id="tab-list" aria-selected="true" type="button">List</button>
+      <button role="tab" id="tab-cal" aria-selected="false" type="button">Calendar</button>
+    </div>
+    <input type="search" id="q" placeholder="Search calls, funders, notes…" aria-label="Search">
+    <select id="topic" aria-label="Topic">
+      <option value="">All topics</option><option>Gut microbiome</option><option>Diet × gut</option><option>Fungi / mycobiome</option><option>Food microbiome</option><option>Bioinformatics</option><option>General</option>
+    </select>
+    <select id="route" aria-label="Who applies">
+      <option value="">Anyone applies</option><option value="lead">I can lead</option><option value="pi">Via PI / postdoc</option>
+    </select>
+    <select id="sort" aria-label="Sort">
+      <option value="deadline">Soonest deadline</option><option value="priority">Priority</option><option value="status">Status</option>
+    </select>
+    <label class="chk"><input type="checkbox" id="closed"> Show closed</label>
+    <span class="count" id="count"></span>
+  </section>
+
+  <main id="view"><div class="empty" id="loading">Loading your calls…</div></main>
+
+  <p class="foot" id="foot">Calls marked <span class="badge">Radar</span> come from the weekly Grant Radar refresh. Your statuses and notes are kept with this page.</p>
+</div>
+
+<script>
+(function () {
+  const STATUSES = ["Not tracked", "Watching", "Preparing", "Submitted", "Awarded", "Not applying"];
+  const SCOLOR = { "Watching": "var(--s-watch)", "Preparing": "var(--s-prep)", "Submitted": "var(--s-sub)", "Awarded": "var(--s-won)", "Not applying": "var(--s-no)", "Not tracked": "var(--line)" };
+  const $ = (s) => document.querySelector(s);
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const isUrl = (u) => typeof u === "string" && /^https?:\/\//i.test(u);
+  const host = (u) => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch (e) { return ""; } };
+
+  const state = { calls: new Map(), track: new Map(), db: null, canWrite: false, view: "list", statusFilter: "", q: "", topic: "", route: "", sort: "deadline", closed: false, month: null, open: new Set(), editing: null, loaded: { calls: false, track: false } };
+  try { const v = localStorage.getItem("gt-view"); if (v === "cal" || v === "list") state.view = v; } catch (e) {}
+
+  function todayUTC() { const n = new Date(); return Date.UTC(n.getFullYear(), n.getMonth(), n.getDate()); }
+  function daysLeft(d) { const t = Date.parse(d); return isNaN(t) ? null : Math.round((t - todayUTC()) / 864e5); }
+  function fmtDate(d) { const t = new Date(d + "T00:00:00Z"); return isNaN(t) ? d : t.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }); }
+  function statusOf(id) { return (state.track.get(id) || {}).status || "Not tracked"; }
+  function slug(s) { return (s || "call").toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80) || "call"; }
+
+  function toast(msg) { const t = el("div", "toast", msg); t.setAttribute("role", "status"); document.body.appendChild(t); setTimeout(() => t.remove(), 2600); }
+
+  // one write at a time per document
+  const chains = new Map();
+  function queueWrite(path, fn) {
+    const prev = chains.get(path) || Promise.resolve();
+    const next = prev.catch(() => {}).then(fn);
+    chains.set(path, next);
+    return next;
+  }
+  function writeErr(e) {
+    if (e && e.code === "invalid_argument") { state.canWrite = false; render(); toast("You can view this tracker but not change it."); }
+    else if (e && e.code === "quota_exceeded") toast("Storage is full — remove some of your own calls first.");
+    else toast("Couldn't save. Check your connection and try again.");
+  }
+  function setTrack(id, patch) {
+    if (!state.db) return;
+    const cur = Object.assign({}, state.track.get(id) || {}, patch, { updatedAt: new Date().toISOString() });
+    state.track.set(id, cur);
+    return queueWrite("tracking/" + id, () => state.db.collection("tracking").doc(id).set(cur)).catch(writeErr);
+  }
+  const noteTimers = new Map();
+
+  function topicsOf(c) { return String(c.topics || "").split(";").map(s => s.trim()).filter(Boolean); }
+  function canLead(c) { return String(c.route || "").startsWith("You can lead"); }
+
+  function filtered() {
+    const q = state.q.toLowerCase();
+    let rows = [...state.calls.values()].map(c => ({ c, dl: daysLeft(c.deadline), st: statusOf(c.id), notes: (state.track.get(c.id) || {}).notes || "" }));
+    rows = rows.filter(r =>
+      (state.closed || r.dl == null || r.dl >= 0 || ["Submitted", "Awarded"].includes(r.st)) &&
+      (!state.statusFilter || r.st === state.statusFilter) &&
+      (!state.topic || topicsOf(r.c).includes(state.topic)) &&
+      (!state.route || (state.route === "lead" ? canLead(r.c) : !canLead(r.c))) &&
+      (!q || [r.c.call, r.c.funder, r.c.topics, r.c.summary, r.c.eligibility, r.c.region, r.c.amount, r.notes].join(" ").toLowerCase().includes(q)));
+    const sOrder = s => ({ "Preparing": 0, "Watching": 1, "Submitted": 2, "Not tracked": 3, "Awarded": 4, "Not applying": 5 })[s];
+    rows.sort((a, b) => {
+      const pa = (a.dl ?? 9e9) < 0, pb = (b.dl ?? 9e9) < 0;
+      if (pa !== pb) return pa ? 1 : -1;
+      if (state.sort === "priority") {
+        const ga = canLead(a.c) ? 0 : 1, gb = canLead(b.c) ? 0 : 1;
+        return ga - gb || (a.c.priority ?? 99) - (b.c.priority ?? 99) || (a.dl ?? 9e9) - (b.dl ?? 9e9);
+      }
+      if (state.sort === "status") return sOrder(a.st) - sOrder(b.st) || (a.dl ?? 9e9) - (b.dl ?? 9e9);
+      return (a.dl ?? 9e9) - (b.dl ?? 9e9);
+    });
+    return rows;
+  }
+
+  function gcalLink(c) {
+    const d = String(c.deadline || "").replace(/-/g, "");
+    if (!/^\d{8}$/.test(d)) return null;
+    const t = new Date(c.deadline + "T00:00:00Z"); t.setUTCDate(t.getUTCDate() + 1);
+    const e = t.toISOString().slice(0, 10).replace(/-/g, "");
+    const details = [c.deadline_note, c.summary, isUrl(c.url) ? c.url : ""].filter(Boolean).join("\n\n");
+    return "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" + encodeURIComponent("Deadline: " + c.call) + "&dates=" + d + "/" + e + "&details=" + encodeURIComponent(details);
+  }
+
+  function renderStrip() {
+    const strip = $("#strip"); strip.textContent = "";
+    const ahead = [...state.calls.values()].filter(c => { const d = daysLeft(c.deadline); return d == null || d >= 0; });
+    const counts = {}; STATUSES.forEach(s => counts[s] = 0);
+    [...state.calls.values()].forEach(c => { const s = statusOf(c.id); if (s === "Not tracked") { const d = daysLeft(c.deadline); if (d != null && d < 0) return; } counts[s]++; });
+    const items = [["", "Open calls", ahead.length, "var(--accent)"], ...["Watching", "Preparing", "Submitted", "Awarded"].map(s => [s, s, counts[s], SCOLOR[s]]), ["Not tracked", "Not reviewed", counts["Not tracked"], "var(--line)"]];
+    items.forEach(([key, label, n, col]) => {
+      const b = el("button", "stat"); b.type = "button"; b.setAttribute("aria-pressed", String(state.statusFilter === key));
+      b.append(el("span", "n", String(n)));
+      const l = el("span", "l"); const d = el("span", "dot"); d.style.background = col; l.append(d, document.createTextNode(label)); b.append(l);
+      b.addEventListener("click", () => { state.statusFilter = state.statusFilter === key ? "" : key; if (key === "") state.statusFilter = ""; render(); });
+      strip.append(b);
+    });
+    const next = ahead.filter(c => statusOf(c.id) !== "Not applying").sort((a, b) => daysLeft(a.deadline) - daysLeft(b.deadline))[0];
+    $("#lede").textContent = next ? `Next deadline: ${next.call} — ${fmtDate(next.deadline)} (${daysLeft(next.deadline) === 0 ? "today" : daysLeft(next.deadline) + " days"}).` : "Gut & food microbiome, mycobiome and bioinformatics calls you can apply to from Kraków.";
+  }
+
+  function dlBlock(c) {
+    const d = daysLeft(c.deadline);
+    const w = el("div", "dl");
+    w.append(document.createTextNode(fmtDate(c.deadline)));
+    const s = el("span", "days", d == null ? "" : d < 0 ? "closed" : d === 0 ? "today" : d === 1 ? "1 day" : d + " days");
+    if (d != null) s.classList.add(d < 0 ? "past" : d <= 7 ? "urgent" : d <= 30 ? "soon" : "x");
+    w.append(s); return w;
+  }
+
+  function callCard(r) {
+    const c = r.c;
+    const card = el("article", "call"); card.dataset.status = r.st; card.id = "c-" + c.id;
+    const row = el("div", "row");
+    const name = el("div", "name");
+    if (isUrl(c.url)) { const a = el("a", null, c.call); a.href = c.url; a.target = "_blank"; a.rel = "noopener"; name.append(a, document.createTextNode(" ↗")); }
+    else name.textContent = c.call;
+    const meta = el("div", "meta");
+    if (c.funder) meta.append(el("span", null, c.funder));
+    meta.append(el("span", null, topicsOf(c).join(" · ")));
+    const rb = el("span", "badge" + (canLead(c) ? " lead" : ""), c.route || "—"); meta.append(rb);
+    if (c.source === "mine") meta.append(el("span", "badge mine", "Added by you")); else meta.append(el("span", "badge", "Radar"));
+    if (c.certainty && c.certainty !== "Confirmed") meta.append(el("span", "badge est", c.certainty + " date"));
+    const right = el("div", "right");
+    right.append(dlBlock(c));
+    const sel = el("select", "status"); sel.id = "st-" + c.id; sel.setAttribute("aria-label", "Status for " + c.call);
+    STATUSES.forEach(s => { const o = el("option", null, s); o.value = s; if (s === r.st) o.selected = true; sel.append(o); });
+    sel.disabled = !state.canWrite;
+    sel.addEventListener("change", () => { setTrack(c.id, { status: sel.value }); render(); toast(`Marked “${c.call}” as ${sel.value}`); });
+    right.append(sel);
+    row.append(name, right, meta);
+    card.append(row);
+
+    const det = el("details", "more"); det.open = state.open.has(c.id);
+    det.addEventListener("toggle", () => { det.open ? state.open.add(c.id) : state.open.delete(c.id); });
+    const sum = el("summary", null, det.open ? "Hide details" : "Details, links & notes");
+    det.addEventListener("toggle", () => { sum.textContent = det.open ? "Hide details" : "Details, links & notes"; });
+    det.append(sum);
+    const body = el("div", "body");
+    const left = el("div");
+    if (c.priority_note) left.append(el("p", "why", c.priority_note));
+    const dl = el("dl", "facts");
+    [["About", c.summary], ["Eligibility", c.eligibility], ["Lead applicant", c.lead_requires], ["Amount", c.amount], ["Region", c.region], ["Opens", c.opens ? fmtDate(c.opens) : ""], ["Deadline", [fmtDate(c.deadline), c.deadline_note].filter(Boolean).join(" — ")], ["Last checked", c.last_checked ? fmtDate(c.last_checked) : ""]]
+      .forEach(([k, v]) => { if (!v) return; dl.append(el("dt", null, k), el("dd", null, v)); });
+    left.append(dl);
+    const links = el("div", "links");
+    if (isUrl(c.url)) { const a = el("a", null, "Open call page ↗ (" + host(c.url) + ")"); a.href = c.url; a.target = "_blank"; a.rel = "noopener"; links.append(a); }
+    const g = gcalLink(c); if (g) { const a = el("a", null, "Add deadline to Google Calendar ↗"); a.href = g; a.target = "_blank"; a.rel = "noopener"; links.append(a); }
+    left.append(links);
+    if (c.source === "mine" && state.canWrite) {
+      const acts = el("div", "own-actions");
+      const eb = el("button", "btn", "Edit"); eb.type = "button"; eb.addEventListener("click", () => openForm(c));
+      const db = el("button", "btn", "Delete"); db.type = "button";
+      db.addEventListener("click", () => {
+        if (db.dataset.confirm) { deleteCall(c); return; }
+        db.dataset.confirm = "1"; db.textContent = "Click again to delete"; setTimeout(() => { delete db.dataset.confirm; db.textContent = "Delete"; }, 4000);
+      });
+      acts.append(eb, db); left.append(acts);
+    }
+    const notes = el("div", "notes");
+    const lab = el("label"); lab.htmlFor = "n-" + c.id; lab.append(document.createTextNode("Your notes")); const saved = el("span"); lab.append(saved);
+    const ta = el("textarea"); ta.id = "n-" + c.id; ta.placeholder = "To-dos, contacts, who to ask, draft status…";
+    ta.value = (state.track.get(c.id) || {}).notes || ""; ta.disabled = !state.canWrite;
+    ta.addEventListener("input", () => {
+      saved.textContent = "Saving…"; clearTimeout(noteTimers.get(c.id));
+      noteTimers.set(c.id, setTimeout(() => { Promise.resolve(setTrack(c.id, { notes: ta.value })).then(() => { saved.textContent = "Saved"; }); }, 800));
+    });
+    notes.append(lab, ta);
+    body.append(left, notes);
+    det.append(body);
+    card.append(det);
+    return card;
+  }
+
+  function renderList(rows) {
+    const v = $("#view"); v.textContent = "";
+    if (!rows.length) { v.append(el("div", "empty", state.calls.size ? "No calls match these filters." : "No calls yet. Use “Add a call” to add your first one, or wait for the weekly Radar refresh.")); return; }
+    const list = el("div", "list"); rows.forEach(r => list.append(callCard(r))); v.append(list);
+  }
+
+  function renderCal(rows) {
+    const v = $("#view"); v.textContent = "";
+    if (!state.month) { const n = new Date(); state.month = { y: n.getFullYear(), m: n.getMonth() }; }
+    const { y, m } = state.month;
+    const box = el("section", "cal");
+    const head = el("div", "cal-head");
+    const prev = el("button", "btn", "‹ Prev"); prev.type = "button"; prev.setAttribute("aria-label", "Previous month");
+    const next = el("button", "btn", "Next ›"); next.type = "button"; next.setAttribute("aria-label", "Next month");
+    const title = el("h2", null, new Date(Date.UTC(y, m, 1)).toLocaleDateString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" }));
+    prev.addEventListener("click", () => { state.month = m === 0 ? { y: y - 1, m: 11 } : { y, m: m - 1 }; render(); });
+    next.addEventListener("click", () => { state.month = m === 11 ? { y: y + 1, m: 0 } : { y, m: m + 1 }; render(); });
+    head.append(prev, title, next); box.append(head);
+    const grid = el("div", "grid");
+    ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].forEach(d => grid.append(el("div", "dow", d)));
+    const first = new Date(Date.UTC(y, m, 1)); const offset = (first.getUTCDay() + 6) % 7;
+    const start = Date.UTC(y, m, 1 - offset);
+    const byDay = new Map(); rows.forEach(r => { const k = r.c.deadline; if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(r); });
+    const t0 = todayUTC();
+    for (let i = 0; i < 42; i++) {
+      const t = start + i * 864e5; const d = new Date(t); const key = d.toISOString().slice(0, 10);
+      if (i >= 35 && d.getUTCMonth() !== m) break;
+      const cell = el("div", "day" + (d.getUTCMonth() !== m ? " out" : "") + (t === t0 ? " today" : ""));
+      cell.append(el("span", "d", String(d.getUTCDate())));
+      (byDay.get(key) || []).forEach(r => {
+        const b = el("button", "ev", r.c.call); b.type = "button"; b.title = r.c.call + " — " + r.st; b.style.borderLeftColor = SCOLOR[r.st];
+        b.addEventListener("click", () => { state.view = "list"; state.open.add(r.c.id); render(); const n = document.getElementById("c-" + r.c.id); if (n) n.scrollIntoView({ block: "start" }); });
+        cell.append(b);
+      });
+      grid.append(cell);
+    }
+    box.append(grid);
+    const ag = el("div", "agenda");
+    const inMonth = rows.filter(r => { const d = new Date(r.c.deadline + "T00:00:00Z"); return d.getUTCFullYear() === y && d.getUTCMonth() === m; }).sort((a, b) => a.c.deadline.localeCompare(b.c.deadline));
+    ag.append(el("h3", null, inMonth.length ? `${inMonth.length} deadline${inMonth.length > 1 ? "s" : ""} this month` : "No deadlines this month"));
+    inMonth.forEach(r => {
+      const line = el("div", "ag");
+      line.append(el("span", "when", fmtDate(r.c.deadline)));
+      const nm = el("span"); const dot = el("span", "dot"); dot.style.background = SCOLOR[r.st]; dot.style.marginRight = "6px";
+      nm.append(dot);
+      if (isUrl(r.c.url)) { const a = el("a", null, r.c.call + " ↗"); a.href = r.c.url; a.target = "_blank"; a.rel = "noopener"; a.style.fontSize = ".9rem"; a.style.whiteSpace = "normal"; nm.append(a); } else nm.append(document.createTextNode(r.c.call));
+      line.append(nm);
+      const g = gcalLink(r.c); if (g) { const a = el("a", null, "+ Calendar"); a.href = g; a.target = "_blank"; a.rel = "noopener"; line.append(a); } else line.append(el("span"));
+      ag.append(line);
+    });
+    box.append(ag);
+    v.append(box);
+  }
+
+  function render() {
+    if (!state.loaded.calls) return;
+    renderStrip();
+    $("#tab-list").setAttribute("aria-selected", String(state.view === "list"));
+    $("#tab-cal").setAttribute("aria-selected", String(state.view === "cal"));
+    $("#addBtn").hidden = !state.canWrite;
+    const rows = filtered();
+    $("#count").textContent = `${rows.length} of ${state.calls.size} calls`;
+    // keep focus inside a textarea being edited: skip full re-render of the list when typing is ongoing
+    const active = document.activeElement;
+    const keepId = active && active.tagName === "TEXTAREA" ? active.id : null;
+    const keepPos = keepId ? [active.selectionStart, active.selectionEnd, active.value] : null;
+    if (state.view === "cal") renderCal(rows); else renderList(rows);
+    if (keepId) { const n = document.getElementById(keepId); if (n) { n.value = keepPos[2]; n.focus(); try { n.setSelectionRange(keepPos[0], keepPos[1]); } catch (e) {} } }
+  }
+
+  // form
+  function openForm(c) {
+    state.editing = c || null;
+    $("#formTitle").textContent = c ? "Edit your call" : "Add a call";
+    $("#f-call").value = c ? c.call : ""; $("#f-funder").value = c ? c.funder || "" : ""; $("#f-deadline").value = c ? c.deadline : "";
+    $("#f-url").value = c ? c.url || "" : ""; $("#f-amount").value = c ? c.amount || "" : ""; $("#f-summary").value = c ? c.summary || "" : "";
+    $("#f-topics").value = c ? (topicsOf(c)[0] || "General") : "General"; $("#f-route").value = c ? c.route || "You can lead" : "You can lead";
+    $("#formErr").textContent = ""; $("#formPanel").hidden = false; $("#f-call").focus();
+  }
+  $("#addBtn").addEventListener("click", () => openForm(null));
+  $("#cancelForm").addEventListener("click", () => { $("#formPanel").hidden = true; });
+  $("#callForm").addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    const call = $("#f-call").value.trim(), deadline = $("#f-deadline").value, url = $("#f-url").value.trim();
+    if (!call) { $("#formErr").textContent = "Give the call a name."; return; }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(deadline)) { $("#formErr").textContent = "Pick a deadline date."; return; }
+    if (url && !isUrl(url)) { $("#formErr").textContent = "The link must start with https://"; return; }
+    const id = state.editing ? state.editing.id : "mine-" + slug(call) + "-" + Math.random().toString(36).slice(2, 6);
+    const doc = { call, funder: $("#f-funder").value.trim(), deadline, url, amount: $("#f-amount").value.trim(), summary: $("#f-summary").value.trim(),
+      topics: $("#f-topics").value, route: $("#f-route").value, source: "mine", certainty: "Confirmed", created: state.editing ? (state.editing.created || "") : new Date().toISOString() };
+    const btn = $("#saveCall"); btn.disabled = true;
+    queueWrite("calls/" + id, () => state.db.collection("calls").doc(id).set(doc))
+      .then(() => { $("#formPanel").hidden = true; toast(state.editing ? "Call updated" : "Call added"); if (!state.editing) setTrack(id, { status: "Watching" }); state.editing = null; })
+      .catch(e => { $("#formErr").textContent = e && e.code === "invalid_argument" ? "You don't have permission to add calls here." : "Couldn't save the call. Try again."; })
+      .finally(() => { btn.disabled = false; });
+  });
+  function deleteCall(c) {
+    queueWrite("calls/" + c.id, () => state.db.collection("calls").doc(c.id).delete())
+      .then(() => { toast("Call deleted"); return state.track.has(c.id) ? queueWrite("tracking/" + c.id, () => state.db.collection("tracking").doc(c.id).delete()) : null; })
+      .catch(writeErr);
+  }
+
+  // filters
+  $("#q").addEventListener("input", e => { state.q = e.target.value; render(); });
+  $("#topic").addEventListener("change", e => { state.topic = e.target.value; render(); });
+  $("#route").addEventListener("change", e => { state.route = e.target.value; render(); });
+  $("#sort").addEventListener("change", e => { state.sort = e.target.value; render(); });
+  $("#closed").addEventListener("change", e => { state.closed = e.target.checked; render(); });
+  const setView = (v) => { state.view = v; try { localStorage.setItem("gt-view", v); } catch (e) {} render(); };
+  $("#tab-list").addEventListener("click", () => setView("list"));
+  $("#tab-cal").addEventListener("click", () => setView("cal"));
+
+  // export
+  let downloads = null;
+  function csvCell(s) { s = String(s ?? ""); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+  $("#exportBtn").addEventListener("click", async () => {
+    const rows = filtered().filter(r => r.dl != null && r.dl >= 0 && r.st !== "Not applying");
+    if (!rows.length) { toast("No upcoming deadlines in the current view."); return; }
+    const lines = [["Subject", "Start Date", "All Day Event", "Description", "Location"].join(",")];
+    rows.forEach(r => { const [Y, M, D] = r.c.deadline.split("-"); lines.push([csvCell("Deadline: " + r.c.call), `${M}/${D}/${Y}`, "True", csvCell([r.st, r.c.deadline_note, isUrl(r.c.url) ? r.c.url : ""].filter(Boolean).join(" | ")), ""].join(",")); });
+    try { await downloads.save({ filename: "grant-deadlines.csv", data: lines.join("\n") }); toast("Saved — import it in Google Calendar or Outlook"); }
+    catch (e) { if (e && e.code === "declined") return; if (e && e.code === "rate_limited") toast("A save is already waiting for your answer."); else toast("Export isn't available here."); }
+  });
+
+  // boot
+  (async () => {
+    if (!window.claude || !window.claude.use) { $("#loading").textContent = "Open this page on claude.ai while signed in to load your calls."; return; }
+    const [db, user, dl] = await Promise.all([claude.use("db"), claude.use("user"), claude.use("downloads")]);
+    downloads = dl; if (dl) $("#exportBtn").hidden = false;
+    if (!db) { $("#loading").textContent = "Sign in on claude.ai to load your calls and tracking."; return; }
+    state.db = db;
+    let cw = null; try { cw = user ? await user.can("data.write") : null; } catch (e) {}
+    state.canWrite = cw !== false;
+    db.collection("calls").onSnapshot(snap => {
+      state.calls = new Map(snap.docs.filter(d => d.exists).map(d => [d.id, Object.assign({ id: d.id }, d.data())]));
+      state.loaded.calls = true; render();
+    }, () => { $("#view").textContent = ""; $("#view").append(el("div", "empty", "Calls couldn't load. Reload the page to try again.")); });
+    db.collection("tracking").onSnapshot(snap => {
+      const m = new Map(); snap.docs.forEach(d => { if (d.exists) m.set(d.id, d.data()); });
+      // keep local unsaved note edits
+      state.track.forEach((v, k) => { if (noteTimers.has(k) && m.has(k)) m.set(k, Object.assign({}, m.get(k), { notes: v.notes })); });
+      state.track = m; state.loaded.track = true; render();
+    }, () => {});
+  })();
+})();
+</script>
+
+</body></html>

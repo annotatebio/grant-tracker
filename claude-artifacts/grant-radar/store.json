@@ -1,0 +1,21 @@
+{
+  "dash/meta": {
+    "title": "Grant Radar"
+  },
+  "datasets/grants": {
+    "description": "Grant calls a Poland-based researcher can apply to, in gut and food microbiome, diet × gut, fungi/mycobiome, bioinformatics and general schemes, gathered by Claude from funder and research-office pages. Refreshed weekly.",
+    "schedule": "Weekly, Mondays 08:55 Europe/Warsaw",
+    "source": {
+      "format": "json",
+      "kind": "file",
+      "name": "grants.json",
+      "url": "../../data/grants.json  (live copy: artifact asset /_blob/6ab92185a19dd34fbe723da577bd9835)"
+    },
+    "staleAfterHours": 192,
+    "title": "Grant calls list",
+    "updated": {
+      "at": "2026-11-02T12:25:00Z",
+      "by": "Claude (priority notes without personal status)"
+    }
+  }
+}

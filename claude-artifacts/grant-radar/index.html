@@ -1,0 +1,406 @@
+<style>
+.gr { font-family: var(--font-anthropic-sans); display: flex; flex-direction: column; gap: var(--cds-gap-lg); }
+.gr h1 { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); margin: 0; }
+.gr .lede { color: var(--color-fg-muted); margin: var(--cds-gap-xs) 0 0; font-size: var(--cds-font-size-body); }
+.gr .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr)); gap: var(--cds-gap-md); }
+.gr .card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); min-width: 0; }
+.gr .kpi .lbl { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+.gr .kpi .num { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); font-variant-numeric: tabular-nums; margin-top: var(--cds-gap-xs); }
+.gr .kpi .sub { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin-top: var(--cds-gap-xs); }
+.gr h2 { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: 0; }
+.gr .note { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); margin: var(--cds-gap-xs) 0 var(--cds-gap-md); }
+.gr .chips { display: flex; flex-wrap: wrap; gap: var(--cds-gap-xs); margin-bottom: var(--cds-gap-sm); }
+.gr .chip { font: inherit; font-size: var(--cds-font-size-caption); border: 1px solid var(--color-border-line); background: var(--color-bg); color: var(--color-fg); border-radius: 999px; padding: 2px 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.gr .chip[aria-pressed="true"] { border-color: var(--color-fg); font-weight: var(--cds-font-weight-medium); }
+.gr .sw { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.gr .tools { display: flex; flex-wrap: wrap; gap: var(--cds-gap-sm); align-items: center; margin-bottom: var(--cds-gap-sm); font-size: var(--cds-font-size-caption); }
+.gr .tools input[type=search] { font: inherit; padding: 4px 8px; border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); background: var(--color-bg); color: var(--color-fg); min-width: 12rem; flex: 1; }
+.gr .chart { position: relative; min-height: 260px; }
+.gr .tip { position: absolute; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); pointer-events: none; max-width: 18rem; display: none; z-index: 2; }
+.gr .tip .d { color: var(--cds-text-secondary); }
+.gr .tblwrap { max-height: 38rem; overflow: auto; }
+.gr table { width: 100%; border-collapse: collapse; font-size: var(--cds-font-size-caption); font-variant-numeric: tabular-nums; }
+.gr th { position: sticky; top: 0; background: var(--color-panel); text-align: left; font-weight: var(--cds-font-weight-medium); padding: 6px 8px; border-bottom: 1px solid var(--color-border-line); z-index: 1; }
+.gr th button { font: inherit; background: none; border: 0; color: inherit; cursor: pointer; padding: 0; }
+.gr td { padding: 8px; border-bottom: 1px solid var(--color-border-line); vertical-align: top; }
+.gr td.call a { color: var(--color-fg); font-weight: var(--cds-font-weight-medium); }
+.gr td .sum { color: var(--color-fg-muted); margin-top: 4px; font-weight: 400; }
+.gr .st-open { color: var(--color-ok); } .gr .st-soon { color: var(--color-warn); } .gr .st-closed { color: var(--color-fg-muted); }
+.gr .urgent { color: var(--color-bad); font-weight: var(--cds-font-weight-medium); }
+@media (max-width: 720px) { .gr .hide-sm { display: none; } }
+[data-dash-source-state=refreshing] { opacity: .5; transition: opacity var(--cds-dur-slow); }
+.gr .fail { display: flex; align-items: center; justify-content: center; gap: 6px; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); min-height: 200px; }
+.gr .fail::before { content: ""; width: .375rem; height: .375rem; border-radius: 50%; background: var(--color-bad); }
+.gr .board { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: var(--cds-gap-md); }
+.gr .col h2 { display: flex; align-items: center; gap: 8px; }
+.gr .pill { font-size: var(--cds-font-size-caption); font-weight: 400; border-radius: 999px; padding: 1px 8px; border: 1px solid var(--color-border-line); color: var(--color-fg-muted); font-variant-numeric: tabular-nums; }
+.gr .items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.gr .items li { padding: var(--cds-pad-sm) 0; border-top: 1px solid var(--color-border-line); display: grid; grid-template-columns: 1fr auto; gap: 2px var(--cds-gap-sm); }
+.gr .items li:first-child { border-top: 0; }
+.gr .items a { color: var(--color-fg); font-weight: var(--cds-font-weight-medium); font-size: var(--cds-font-size-body); }
+.gr .items .when { text-align: right; font-size: var(--cds-font-size-caption); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.gr .items .req { grid-column: 1 / -1; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.gr .items .req b { font-weight: var(--cds-font-weight-medium); color: var(--color-fg); }
+.gr .items .head { display: flex; gap: 8px; align-items: baseline; min-width: 0; }
+.gr .items .rank { font-family: var(--font-anthropic-serif); font-size: var(--cds-font-size-heading); color: var(--color-fg-muted); min-width: 1.4em; font-variant-numeric: tabular-nums; }
+.gr .items .why { grid-column: 1 / -1; font-size: var(--cds-font-size-caption); color: var(--color-fg); }
+.gr .empty { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+.gr .src { grid-column: 1 / -1; font-size: var(--cds-font-size-caption); display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.gr .src a, .gr td a.ext, .gr .applink { color: var(--color-fg); text-decoration: underline; text-underline-offset: 2px; text-decoration-color: var(--color-border-line); }
+.gr .src a:hover, .gr td a.ext:hover, .gr .applink:hover { text-decoration-color: currentColor; }
+.gr .muted { color: var(--color-fg-muted); }
+.gr td details { margin-top: 4px; }
+.gr td details summary { cursor: pointer; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); width: max-content; }
+.gr td details dl { margin: 6px 0 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 2px 10px; max-width: 46rem; }
+.gr td details dt { color: var(--color-fg-muted); }
+.gr td details dd { margin: 0; }
+.gr .applink { font-size: var(--cds-font-size-body); }
+.gr .yourself { border-top: 3px solid var(--color-ok); }
+.gr .needs { border-top: 3px solid var(--color-border-line); }
+.gr .pred { border-top: 3px dashed var(--color-warn); }
+.gr .pred-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); column-gap: var(--cds-gap-lg); }
+.gr .pred-list li, .gr .pred-list li:first-child { border-top: 1px solid var(--color-border-line); }
+.gr .tags { display: inline-flex; flex-wrap: wrap; gap: 4px; vertical-align: middle; }
+.gr .tag { font-size: var(--cds-font-size-caption); border-radius: var(--cds-radius); padding: 0 6px; background: var(--color-bg); border: 1px solid var(--color-border-line); color: var(--color-fg); white-space: nowrap; }
+.gr .tag.ind { border-color: var(--color-ok); color: var(--color-ok); }
+.gr .tag.me { border-color: var(--color-fg); }
+.gr .kind { font-size: var(--cds-font-size-caption); border-radius: 999px; padding: 0 8px; border: 1px solid var(--color-border-line); color: var(--color-fg-muted); white-space: nowrap; }
+.gr .filters { display: flex; flex-direction: column; gap: var(--cds-gap-xs); padding: var(--cds-pad-md) var(--cds-pad-lg); }
+.gr .filters .chips { margin-bottom: 0; }
+.gr .filters .lbl { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+</style>
+<div class="gr">
+  <header>
+    <h1 id="title">Grant radar: microbiome, food, fungi &amp; bioinformatics</h1>
+    <p class="lede" id="takeaway" data-source="kpis" data-field="takeaway">—</p>
+    <p class="lede"><a class="applink" id="tracker-link" href="https://claude.ai/artifact/CpeotVcFR3R9bujHuaqkmx" target="_blank" rel="noopener">Open Grant Tracker ↗</a> <span class="muted">to mark statuses, keep notes, add your own calls and see a deadline calendar.</span></p>
+  </header>
+
+  <section class="kpis" aria-label="Headline figures">
+    <div class="card kpi"><div class="lbl">Closing in next 30 days</div><div class="num dash-skeleton" data-source="kpis" data-field="closing_30">—</div><div class="sub">Act on these first</div></div>
+    <div class="card kpi"><div class="lbl">Accepting applications now</div><div class="num dash-skeleton" data-source="kpis" data-field="open_now">—</div><div class="sub">Opened, deadline ahead</div></div>
+    <div class="card kpi"><div class="lbl">Microbiome / food / fungi calls ahead</div><div class="num dash-skeleton" data-source="kpis" data-field="topic_fit">—</div><div class="sub">Excludes general schemes</div></div>
+    <div class="card kpi"><div class="lbl">Calls you can lead yourself</div><div class="num dash-skeleton" data-source="kpis" data-field="can_lead">—</div><div class="sub">As a PhD student, deadline ahead</div></div>
+    <div class="card kpi"><div class="lbl">Open to industry partners</div><div class="num dash-skeleton" data-source="kpis" data-field="industry">—</div><div class="sub">Consortia a company can join or lead</div></div>
+    <div class="card kpi"><div class="lbl">Calls tracked</div><div class="num dash-skeleton" data-source="kpis" data-field="tracked">—</div><div class="sub" id="checked">Last checked <span data-source="kpis" data-field="last_checked">—</span></div></div>
+  </section>
+
+
+  <section class="card filters" id="type-filter" aria-label="Type filter">
+    <div class="lbl">Show</div>
+    <div class="chips" id="kinds" role="group" aria-label="Type of funding"></div>
+    <div class="lbl">Who can apply</div>
+    <div class="chips" id="whos" role="group" aria-label="Who can apply"></div>
+  </section>
+
+  <section class="board" id="who-can-apply" data-source="grants timing">
+    <div class="card col yourself">
+      <h2>Focus here: you can apply <span class="pill" id="n-self">—</span></h2>
+      <p class="note">Open to a PhD student as the applicant. Announced calls only, ranked by priority: fit, feasibility and time left.</p>
+      <ul class="items" id="list-self"></ul>
+    </div>
+    <div class="card col needs">
+      <h2>Team &amp; consortium calls <span class="pill" id="n-need">—</span></h2>
+      <p class="note">Someone else applies (see the tags: a PhD holder, a consortium or a company) and you join the team; your position or bioinformatics can be budgeted. Announced calls only, ranked by priority.</p>
+      <ul class="items" id="list-need"></ul>
+    </div>
+  </section>
+  <section class="card pred" id="predicted" data-source="grants timing">
+    <h2>Predicted, not yet announced <span class="pill" id="n-pred">—</span></h2>
+    <p class="note">Not announced yet: dates are estimated from previous years' cycles. Check the funder page before planning around them. Calls you can apply to yourself come first.</p>
+    <ul class="items pred-list" id="list-pred"></ul>
+  </section>
+  <section class="card" id="timeline">
+    <h2>Deadlines ahead, by topic</h2>
+    <p class="note">Each dot is a call's deadline; hollow dots are predicted dates. Hover for details. A call with several topics shows in each lane.</p>
+    <div class="chart" id="chart" data-source="grants"></div>
+  </section>
+
+  <section class="card" id="calls">
+    <h2>All calls</h2>
+    <p class="note">Filter by topic, search any text, sort by a column. Each call name links to its call page; open “Details” for eligibility and deadline notes.</p>
+    <div class="chips" id="chips" role="group" aria-label="Topic filter"></div>
+    <div class="tools">
+      <input type="search" id="q" placeholder="Search funder, region, keyword…" aria-label="Search calls">
+      <label><input type="checkbox" id="leadOnly"> Only calls I can apply to myself</label>
+      <label><input type="checkbox" id="showClosed"> Show closed</label>
+      <label><input type="checkbox" id="hidePred"> Hide predicted</label>
+      <span id="count" style="color:var(--color-fg-muted)"></span>
+    </div>
+    <div class="tblwrap">
+      <table id="tbl" data-source="grants" data-row-key="call">
+        <thead><tr>
+          <th data-field="call"><button data-k="call">Call</button></th>
+          <th data-field="funder" class="hide-sm"><button data-k="funder">Funder</button></th>
+          <th data-field="kind"><button data-k="kind">Type</button></th>
+          <th data-field="topics"><button data-k="topics">Topics</button></th>
+          <th data-field="region" class="hide-sm"><button data-k="region">Region</button></th>
+          <th data-field="amount" class="hide-sm"><button data-k="amount">Amount</button></th>
+          <th data-field="deadline"><button data-k="deadline" aria-sort="ascending">Deadline</button></th>
+          <th data-source="timing" data-field="days_left"><button data-k="days_left">Days left</button></th>
+          <th data-source="timing" data-field="status"><button data-k="status">Status</button></th>
+          <th data-field="applicants"><button data-k="applicants">Who can apply</button></th>
+          <th data-field="certainty" class="hide-sm"><button data-k="certainty">Certainty</button></th>
+          <th data-field="url"><button data-k="url">Source</button></th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+</div>
+<script>
+const TOPICS = ["Gut microbiome", "Diet × gut", "Fungi / mycobiome", "Food microbiome", "Bioinformatics", "General"];
+window.GR_TOPICS = TOPICS;
+const KINDS = ["Research grant", "Conference / travel", "Training / lab visit"];
+const WHO = ["PhD student", "Early-career PhD", "Mid-career PhD", "Any PhD holder", "Senior PI", "Consortium", "Industry partners welcome", "Industry-led"];
+const KIND_LABELS = { "Research grant": "Research grants", "Conference / travel": "Conference & travel funding", "Training / lab visit": "Training & lab visits" };
+
+dash.calc("timing", {
+  inputs: ["grants"],
+  title: "Days left and status",
+  description: "Days from today to each deadline, and whether the call is open, not yet open or closed.",
+  fn: (grants) => {
+    const day = 864e5, now = new Date(); const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+    return grants.map(g => {
+      const dl = Date.parse(g.deadline), op = g.opens ? Date.parse(g.opens) : null;
+      const days_left = Math.round((dl - today) / day);
+      const status = days_left < 0 ? "Closed" : (op && op > today ? "Opens " + g.opens : "Open");
+      return { call: g.call, days_left, status };
+    });
+  }
+});
+
+dash.calc("kpis", {
+  inputs: ["grants", "timing"],
+  title: "Headline counts",
+  description: "Counts of calls open now, closing within 30 days, and topic-specific calls still ahead.",
+  fn: (grants, timing) => {
+    const t = new Map(timing.map(r => [r.call, r]));
+    const ahead = grants.filter(g => t.get(g.call).days_left >= 0);
+    const open_now = ahead.filter(g => t.get(g.call).status === "Open").length;
+    const soon = ahead.filter(g => t.get(g.call).days_left <= 30).sort((a, b) => t.get(a.call).days_left - t.get(b.call).days_left);
+    const topic_fit = ahead.filter(g => g.topics !== "General").length;
+    const nxt = soon[0];
+    const takeaway = nxt ? `Next up: ${nxt.call} — ${t.get(nxt.call).days_left} days left.` : "Nothing closes in the next 30 days.";
+    const last_checked = grants.map(g => g.last_checked).sort().pop();
+    const can_lead = ahead.filter(g => (g.route || "").startsWith("You can lead")).length;
+    const industry = ahead.filter(g => /Industry/.test(g.applicants || "")).length;
+    return [{ open_now, can_lead, industry, closing_30: soon.length, topic_fit, tracked: grants.length, takeaway, last_checked }];
+  }
+});
+
+(function () {
+  const root = document.querySelector(".gr");
+  const chipsEl = root.querySelector("#chips");
+  const state = { topics: new Set(), kinds: new Set(), q: "", closed: false, lead: false, hidePred: false, sort: "deadline", dir: 1 };
+  const kindsEl = root.querySelector("#kinds");
+  const allK = document.createElement("button");
+  allK.className = "chip"; allK.textContent = "Everything"; allK.setAttribute("aria-pressed", "true");
+  allK.addEventListener("click", () => { state.kinds.clear(); render(); });
+  kindsEl.appendChild(allK);
+  KINDS.forEach(k => {
+    const b = document.createElement("button");
+    b.className = "chip"; b.dataset.k = k; b.setAttribute("aria-pressed", "false"); b.textContent = KIND_LABELS[k];
+    b.addEventListener("click", () => { state.kinds.has(k) ? state.kinds.delete(k) : state.kinds.add(k); render(); });
+    kindsEl.appendChild(b);
+  });
+  state.whos = new Set();
+  const whosEl = root.querySelector("#whos");
+  const allW = document.createElement("button");
+  allW.className = "chip"; allW.textContent = "Anyone"; allW.setAttribute("aria-pressed", "true");
+  allW.addEventListener("click", () => { state.whos.clear(); render(); });
+  whosEl.appendChild(allW);
+  WHO.forEach(w => {
+    const b = document.createElement("button");
+    b.className = "chip"; b.dataset.w = w; b.setAttribute("aria-pressed", "false"); b.textContent = w;
+    b.addEventListener("click", () => { state.whos.has(w) ? state.whos.delete(w) : state.whos.add(w); render(); });
+    whosEl.appendChild(b);
+  });
+  const whoOf = (r) => (r.applicants || "").split(";").map(s => s.trim()).filter(Boolean);
+  const whoOk = (r) => state.whos.size === 0 || whoOf(r).some(w => state.whos.has(w));
+  const tagsEl = (r) => {
+    const t = document.createElement("span"); t.className = "tags";
+    whoOf(r).forEach(w => { const s = document.createElement("span"); s.className = "tag" + (/Industry/.test(w) ? " ind" : w === "PhD student" ? " me" : ""); s.textContent = w; t.appendChild(s); });
+    return t;
+  };
+  const kindOf = (r) => r.kind || "Research grant";
+  const isPred = (r) => r.certainty === "Expected";
+  const kindOk = (r) => (state.kinds.size === 0 || state.kinds.has(kindOf(r))) && whoOk(r);
+  const color = (t) => dash.colors[TOPICS.indexOf(t) % dash.colors.length];
+
+  const allBtn = document.createElement("button");
+  allBtn.className = "chip"; allBtn.textContent = "All topics"; allBtn.setAttribute("aria-pressed", "true");
+  allBtn.addEventListener("click", () => { state.topics.clear(); render(); });
+  chipsEl.appendChild(allBtn);
+  TOPICS.forEach(t => {
+    const b = document.createElement("button");
+    b.className = "chip"; b.dataset.t = t; b.setAttribute("aria-pressed", "false");
+    const s = document.createElement("span"); s.className = "sw"; s.style.background = color(t);
+    b.append(s, document.createTextNode(t));
+    b.addEventListener("click", () => { state.topics.has(t) ? state.topics.delete(t) : state.topics.add(t); render(); });
+    chipsEl.appendChild(b);
+  });
+  root.querySelector("#q").addEventListener("input", e => { state.q = e.target.value.toLowerCase(); render(); });
+  root.querySelector("#leadOnly").addEventListener("change", e => { state.lead = e.target.checked; render(); });
+  root.querySelector("#showClosed").addEventListener("change", e => { state.closed = e.target.checked; render(); });
+  root.querySelector("#hidePred").addEventListener("change", e => { state.hidePred = e.target.checked; render(); });
+  root.querySelectorAll("th button").forEach(b => b.addEventListener("click", () => {
+    const k = b.dataset.k; state.dir = state.sort === k ? -state.dir : 1; state.sort = k; render();
+  }));
+
+  const hostOf = (u) => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch (e) { return ""; } };
+  const gcal = (r) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(r.deadline || "")) return null;
+    const d = new Date(r.deadline + "T00:00:00Z"), e = new Date(d.getTime() + 864e5), f = (x) => x.toISOString().slice(0, 10).replace(/-/g, "");
+    return "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" + encodeURIComponent(evTitle(r)) + "&dates=" + f(d) + "/" + f(e) + "&details=" + encodeURIComponent(evBody(r));
+  };
+  const evTitle = (r) => (isPred(r) ? "Expected deadline (predicted): " : "Deadline: ") + r.call;
+  const evBody = (r) => [r.deadline_note, r.url].filter(Boolean).join("\n");
+  const outlook = (r) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(r.deadline || "")) return null;
+    const e = new Date(Date.parse(r.deadline + "T00:00:00Z") + 864e5).toISOString().slice(0, 10);
+    return "https://outlook.office.com/calendar/0/deeplink/compose?path=%2Fcalendar%2Faction%2Fcompose&rru=addevent&allday=true&startdt=" + r.deadline + "&enddt=" + e + "&subject=" + encodeURIComponent(evTitle(r)) + "&body=" + encodeURIComponent(evBody(r));
+  };
+  const calLinks = (el, r) => {
+    [["Google Calendar", gcal(r)], ["Outlook / Teams", outlook(r)]].forEach(([t, u]) => {
+      if (!u) return; const l = document.createElement("a"); l.href = u; l.target = "_blank"; l.rel = "noopener"; l.textContent = "+ " + t + " ↗"; el.appendChild(l);
+    });
+  };
+  function render() {
+    const G = dash.data("grants"), T = dash.data("timing"), K = dash.data("kpis");
+    const kp = root.querySelectorAll('[data-source="kpis"]');
+    const kr = K.status === "ok" && K.data[0];
+    kp.forEach(el => { el.classList.toggle("dash-skeleton", !kr && K.status === "loading"); el.textContent = kr ? String(kr[el.dataset.field]) : "—"; });
+
+    whosEl.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", c.dataset.w ? String(state.whos.has(c.dataset.w)) : String(state.whos.size === 0)));
+    kindsEl.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", c.dataset.k ? String(state.kinds.has(c.dataset.k)) : String(state.kinds.size === 0)));
+    chipsEl.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", c.dataset.t ? String(state.topics.has(c.dataset.t)) : String(state.topics.size === 0)));
+    root.querySelectorAll("th button").forEach(b => b.dataset.k === state.sort ? b.setAttribute("aria-sort", state.dir > 0 ? "ascending" : "descending") : b.removeAttribute("aria-sort"));
+
+    const chart = root.querySelector("#chart"), tbody = root.querySelector("#tbl tbody");
+    if (G.status !== "ok" || T.status !== "ok") {
+      tbody.textContent = ""; chart.textContent = ""; root.querySelector("#list-self").textContent = ""; root.querySelector("#list-need").textContent = ""; root.querySelector("#list-pred").textContent = "";
+      if (G.status === "error" || T.status === "error") { const f = document.createElement("div"); f.className = "fail"; f.textContent = "Failed to load"; chart.appendChild(f); }
+      return;
+    }
+    const tm = new Map(T.data.map(r => [r.call, r]));
+    const rows = G.data.map(g => Object.assign({}, g, tm.get(g.call)));
+    const topicsOf = r => r.topics.split(";").map(s => s.trim());
+    const vis = rows.filter(r =>
+      (state.closed || r.days_left >= 0) && (!state.lead || (r.route || "").startsWith("You can lead")) && kindOk(r) && !(state.hidePred && isPred(r)) &&
+      (state.topics.size === 0 || topicsOf(r).some(t => state.topics.has(t))) &&
+      (!state.q || [r.call, r.funder, r.funder_type, r.kind, r.applicants, r.topics, r.region, r.eligibility, r.summary, r.amount].join(" ").toLowerCase().includes(state.q)));
+    const k = state.sort;
+    vis.sort((a, b) => { const x = a[k], y = b[k]; return (typeof x === "number" ? x - y : String(x).localeCompare(String(y))) * state.dir; });
+    root.querySelector("#count").textContent = `${vis.length} of ${rows.length} calls`;
+
+
+    // who can apply board (uses topic/search/closed filters, ignores lead-only)
+    const base = rows.filter(r =>
+      (state.closed || r.days_left >= 0) && kindOk(r) &&
+      (state.topics.size === 0 || topicsOf(r).some(t => state.topics.has(t))) &&
+      (!state.q || [r.call, r.funder, r.funder_type, r.kind, r.applicants, r.topics, r.region, r.eligibility, r.summary, r.amount, r.lead_requires].join(" ").toLowerCase().includes(state.q)))
+      .sort((a, b) => ((a.days_left < 0) - (b.days_left < 0)) || ((a.priority ?? 99) - (b.priority ?? 99)) || (a.days_left - b.days_left));
+    const fill = (ul, list, n) => {
+      ul.textContent = ""; root.querySelector(n).textContent = String(list.length);
+      if (!list.length) { const li = document.createElement("li"); li.className = "empty"; li.textContent = "No calls match the current filters."; ul.appendChild(li); return; }
+      list.forEach(r => {
+        const li = document.createElement("li");
+        const a = document.createElement("a"); a.textContent = r.call; a.target = "_blank"; a.rel = "noopener"; if (/^https?:\/\//.test(r.url)) a.href = r.url;
+        const w = document.createElement("div"); w.className = "when";
+        const d1 = document.createElement("div"); d1.textContent = (isPred(r) ? "~" : "") + r.deadline;
+        const d2 = document.createElement("div"); d2.textContent = r.days_left < 0 ? "closed" : `${r.days_left} days`;
+        d2.className = r.days_left < 0 ? "st-closed" : r.days_left <= 14 ? "urgent" : "";
+        w.append(d1, d2);
+        const q = document.createElement("div"); q.className = "req";
+        const b = document.createElement("b"); b.textContent = "Who can apply ";
+        q.append(b, tagsEl(r));
+        if (!isPred(r) && r.certainty !== "Confirmed") q.append(document.createTextNode(` · ${r.certainty.toLowerCase()} date`));
+        const why = document.createElement("div"); why.className = "why"; why.textContent = r.priority_note || "";
+        const rk = document.createElement("span"); rk.className = "rank"; rk.textContent = r.days_left < 0 ? "–" : String(r.priority ?? "");
+        const kb = document.createElement("span"); kb.className = "kind"; kb.textContent = kindOf(r);
+        const head = document.createElement("div"); head.className = "head"; head.append(rk, a, kb);
+        const s = document.createElement("div"); s.className = "src";
+        if (/^https?:\/\//.test(r.url)) { const l = document.createElement("a"); l.href = r.url; l.target = "_blank"; l.rel = "noopener"; l.textContent = "Call page ↗ " + hostOf(r.url); s.appendChild(l); }
+        calLinks(s, r);
+        li.append(head, w, why, q, s); ul.appendChild(li);
+      });
+    };
+    const ann = base.filter(r => !isPred(r));
+    const lead = (r) => (r.route || "").startsWith("You can lead") ? 0 : 1;
+    fill(root.querySelector("#list-self"), ann.filter(r => lead(r) === 0), "#n-self");
+    fill(root.querySelector("#list-need"), ann.filter(r => lead(r) === 1), "#n-need");
+    fill(root.querySelector("#list-pred"), base.filter(isPred).sort((a, b) => (lead(a) - lead(b)) || ((a.priority ?? 99) - (b.priority ?? 99))), "#n-pred");
+    // table
+    tbody.textContent = "";
+    vis.forEach(r => {
+      const tr = document.createElement("tr");
+      const td = (txt, cls) => { const c = document.createElement("td"); if (cls) c.className = cls; c.textContent = txt; tr.appendChild(c); return c; };
+      const c0 = document.createElement("td"); c0.className = "call";
+      const a = document.createElement("a"); a.textContent = r.call; a.target = "_blank"; a.rel = "noopener";
+      if (/^https?:\/\//.test(r.url)) a.href = r.url;
+      c0.appendChild(a); tr.appendChild(c0); tr.dataset.key = r.call;
+      const det = document.createElement("details"); const sm = document.createElement("summary"); sm.textContent = "Details"; det.appendChild(sm);
+      const dl = document.createElement("dl");
+      [["About", r.summary], ["Eligibility", r.eligibility], ["Lead applicant", r.lead_requires], ["Deadline note", r.deadline_note], ["Opens", r.opens], ["Why / next step", r.priority_note], ["Last checked", r.last_checked]].forEach(([k, v]) => {
+        if (!v) return; const dt = document.createElement("dt"); dt.textContent = k; const dd = document.createElement("dd"); dd.textContent = v; dl.append(dt, dd);
+      });
+      const cdt = document.createElement("dt"); cdt.textContent = "Calendar";
+      const cdd = document.createElement("dd"); cdd.className = "src"; calLinks(cdd, r); dl.append(cdt, cdd);
+      det.appendChild(dl); c0.appendChild(det);
+      td(r.funder, "hide-sm"); td(kindOf(r)); td(r.topics); td(r.region, "hide-sm"); td(r.amount, "hide-sm"); td(r.deadline);
+      td(String(r.days_left), r.days_left >= 0 && r.days_left <= 14 ? "urgent" : "");
+      td(r.status, r.status === "Open" ? "st-open" : r.status === "Closed" ? "st-closed" : "st-soon");
+      const cw = document.createElement("td"); cw.appendChild(tagsEl(r)); tr.appendChild(cw);
+      td(isPred(r) ? "Predicted" : r.certainty, "hide-sm");
+      const cu = document.createElement("td");
+      if (/^https?:\/\//.test(r.url)) { const l = document.createElement("a"); l.className = "ext"; l.href = r.url; l.target = "_blank"; l.rel = "noopener"; l.textContent = hostOf(r.url) + " ↗"; cu.appendChild(l); }
+      tr.appendChild(cu);
+      tr.title = `${r.summary}\nEligibility: ${r.eligibility}${r.deadline_note ? "\nDeadline: " + r.deadline_note : ""}`;
+      tbody.appendChild(tr);
+    });
+
+    // timeline
+    chart.textContent = "";
+    const W = Math.max(300, chart.clientWidth), lanes = TOPICS.filter(t => vis.some(r => topicsOf(r).includes(t)));
+    if (!lanes.length) return;
+    const now = new Date(), t0 = d3.utcDay.floor(now);
+    const maxD = d3.max(vis, r => new Date(r.deadline));
+    const svg = d3.select(chart).append("svg").attr("width", "100%");
+    const probe = svg.append("text").attr("font-size", 12).style("font-size", "var(--cds-font-size-caption)");
+    const lw = d3.max(lanes, t => { probe.text(t); return probe.node().getComputedTextLength(); }) || 80; probe.remove();
+    const m = { l: Math.min(lw + 12, W * 0.4), r: 16, t: 8, b: 26 }, laneH = 34, H = m.t + m.b + lanes.length * laneH;
+    svg.attr("viewBox", `0 0 ${W} ${H}`).attr("height", H);
+    const x = d3.scaleUtc([d3.min([t0, d3.min(vis, r => new Date(r.deadline))]), d3.utcDay.offset(maxD, 10)], [m.l, W - m.r]);
+    const y = d3.scaleBand(lanes, [m.t, H - m.b]).padding(0.3);
+    const ax = svg.append("g").attr("transform", `translate(0,${H - m.b})`).call(d3.axisBottom(x).ticks(Math.max(2, Math.floor((W - m.l) / 90))).tickFormat(d3.utcFormat("%b %Y")).tickSizeOuter(0));
+    ax.attr("font-size", null).attr("font-family", null);
+    ax.selectAll("text").style("fill", "var(--color-fg-muted)").style("font-size", "var(--cds-font-size-caption)");
+    ax.selectAll("line,path").style("stroke", "var(--cds-chart-axis)");
+    svg.append("g").selectAll("line").data(lanes).join("line").attr("x1", m.l).attr("x2", W - m.r)
+      .attr("y1", t => y(t) + y.bandwidth() / 2).attr("y2", t => y(t) + y.bandwidth() / 2).style("stroke", "var(--cds-chart-grid)");
+    svg.append("g").selectAll("text").data(lanes).join("text").attr("x", m.l - 8).attr("y", t => y(t) + y.bandwidth() / 2).attr("dy", "0.35em")
+      .attr("text-anchor", "end").style("font-size", "var(--cds-font-size-caption)").style("fill", "var(--color-fg)").text(t => t);
+    svg.append("line").attr("x1", x(t0)).attr("x2", x(t0)).attr("y1", m.t).attr("y2", H - m.b).style("stroke", "var(--cds-chart-reference)").attr("stroke-dasharray", "3 3");
+    svg.append("text").attr("x", x(t0) + 4).attr("y", m.t + 8).style("font-size", "var(--cds-font-size-caption)").style("fill", "var(--color-fg-muted)").text("Today");
+    const pts = vis.flatMap(r => topicsOf(r).filter(t => lanes.includes(t)).map(t => ({ r, t })));
+    const tip = document.createElement("div"); tip.className = "tip"; chart.appendChild(tip);
+    svg.append("g").selectAll("circle").data(pts).join("circle")
+      .attr("cx", d => x(new Date(d.r.deadline))).attr("cy", d => y(d.t) + y.bandwidth() / 2).attr("r", 6)
+      .style("fill", d => isPred(d.r) ? "var(--color-panel)" : color(d.t)).style("fill-opacity", d => d.r.days_left < 0 ? 0.3 : 0.9)
+      .style("stroke", d => isPred(d.r) ? color(d.t) : "var(--color-panel)").style("stroke-width", d => isPred(d.r) ? 2 : 1.5).style("cursor", "pointer")
+      .on("mouseenter", (ev, d) => {
+        tip.textContent = "";
+        const a = document.createElement("div"); a.className = "d"; a.textContent = `${isPred(d.r) ? "Predicted ~" : ""}${d.r.deadline} · ${d.r.days_left} days · ${kindOf(d.r)}`;
+        const b = document.createElement("div"); b.style.fontWeight = "500"; b.textContent = d.r.call;
+        const c = document.createElement("div"); c.textContent = `${d.r.funder} · ${whoOf(d.r).join(", ")}`;
+        tip.append(a, b, c); tip.style.display = "block";
+        const bx = chart.getBoundingClientRect(), px = ev.clientX - bx.left, py = ev.clientY - bx.top;
+        tip.style.left = Math.min(px + 12, bx.width - tip.offsetWidth - 4) + "px"; tip.style.top = Math.max(0, py - tip.offsetHeight - 10) + "px";
+      })
+      .on("mouseleave", () => { tip.style.display = "none"; })
+      .on("click", (ev, d) => { if (/^https?:\/\//.test(d.r.url)) window.open(d.r.url, "_blank", "noopener"); });
+  }
+  dash.onData(render);
+})();
+</script>

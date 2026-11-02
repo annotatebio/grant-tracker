@@ -1,0 +1,634 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grant Radar</title>
+<meta name="description" content="Research funding calls in gut and food microbiome, mycobiome and bioinformatics, open to researchers at Polish institutions. Track your own statuses and notes in your browser.">
+<style>
+:root {
+  --bg: #f6f7f4; --panel: #ffffff; --ink: #1d2320; --muted: #5b6560; --line: #dde2dc;
+  --accent: #2f6d5a; --accent-ink: #fff; --accent-soft: #e2eee8;
+  --ok: #2c7a4b; --warn: #a3600a; --bad: #b3261e; --closed: #8b938e;
+  --lead: #2f6d5a; --pi: #6b4fb0;
+  --s-watch: #3d6fb6; --s-prep: #a3600a; --s-sub: #6b4fb0; --s-won: #2c7a4b; --s-no: #8b938e;
+  --serif: Georgia, "Iowan Old Style", "Times New Roman", serif;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --r: 8px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121614; --panel: #1a201d; --ink: #e6ebe7; --muted: #9aa49e; --line: #2c3430;
+  --accent: #7cc4a8; --accent-ink: #0f1a15; --accent-soft: #1f3129;
+  --ok: #6cc28c; --warn: #e0a24a; --bad: #f08a80; --closed: #6f7873; --lead: #7cc4a8; --pi: #b29be8;
+  --s-watch: #7fa8e6; --s-prep: #e0a24a; --s-sub: #b29be8; --s-won: #6cc28c; --s-no: #6f7873; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #121614; --panel: #1a201d; --ink: #e6ebe7; --muted: #9aa49e; --line: #2c3430;
+  --accent: #7cc4a8; --accent-ink: #0f1a15; --accent-soft: #1f3129;
+  --ok: #6cc28c; --warn: #e0a24a; --bad: #f08a80; --closed: #6f7873; --lead: #7cc4a8; --pi: #b29be8;
+  --s-watch: #7fa8e6; --s-prep: #e0a24a; --s-sub: #b29be8; --s-won: #6cc28c; --s-no: #6f7873; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 var(--sans); }
+a { color: var(--accent); }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 72rem; margin: 0 auto; padding-block: 24px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 20px; }
+header.top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 12px; }
+h1 { font-family: var(--serif); font-weight: 500; font-size: 2.1rem; line-height: 1.1; margin: 0; }
+h2 { font-family: var(--serif); font-weight: 500; font-size: 1.3rem; margin: 0; }
+.sub { color: var(--muted); margin: 6px 0 0; font-size: .92rem; max-width: 46rem; }
+.btn { border: 1px solid var(--line); background: var(--panel); border-radius: var(--r); padding: 7px 12px; cursor: pointer; font-size: .875rem; }
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr)); gap: 8px; }
+.kpi { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; }
+.kpi .n { font-family: var(--serif); font-size: 1.9rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.kpi .l { font-size: .8rem; color: var(--muted); margin-top: 4px; }
+.tabs { display: inline-flex; align-self: flex-start; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; background: var(--panel); }
+.tabs button { border: 0; background: transparent; padding: 8px 16px; cursor: pointer; font-size: .9rem; }
+.tabs button[aria-selected="true"] { background: var(--accent-soft); font-weight: 600; }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: 16px; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; min-width: 0; }
+.panel .hint { color: var(--muted); font-size: .85rem; margin: 4px 0 12px; }
+ol.rank { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+ol.rank li { display: grid; grid-template-columns: 1.8rem minmax(0, 1fr) auto; gap: 4px 10px; padding: 9px 0; border-top: 1px solid var(--line); align-items: baseline; }
+ol.rank li:first-child { border-top: 0; }
+ol.rank .p { font-family: var(--mono); font-size: .8rem; color: var(--muted); }
+ol.rank .nm { font-weight: 600; font-size: .93rem; min-width: 0; overflow-wrap: anywhere; }
+ol.rank .nm button { all: unset; cursor: pointer; border-bottom: 1px solid var(--line); }
+ol.rank .nm button:hover { border-bottom-color: var(--accent); color: var(--accent); }
+ol.rank .why { grid-column: 2 / -1; font-size: .82rem; color: var(--muted); }
+.dl { font-family: var(--mono); font-size: .8rem; white-space: nowrap; text-align: right; }
+.urgent { color: var(--bad); } .soon { color: var(--warn); } .past { color: var(--closed); }
+.chart { position: relative; }
+.chart svg { display: block; width: 100%; height: auto; }
+.chart text { fill: var(--muted); font-size: 11px; font-family: var(--sans); }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: .8rem; color: var(--muted); margin-top: 8px; }
+.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 6px; vertical-align: middle; }
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--bg); font-size: .8rem; padding: 6px 9px; border-radius: 6px; max-width: 16rem; z-index: 5; }
+.bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.bar input[type=search] { flex: 1 1 14rem; min-width: 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--r); background: var(--panel); }
+.bar select { padding: 8px; border: 1px solid var(--line); border-radius: var(--r); background: var(--panel); max-width: 100%; }
+.chk { font-size: .85rem; color: var(--muted); display: inline-flex; gap: 6px; align-items: center; }
+.count { margin-left: auto; font-size: .82rem; color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 4px 11px; font-size: .82rem; cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.list { display: flex; flex-direction: column; gap: 8px; }
+.call { background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: var(--r); }
+.call[data-st="Watching"] { border-left-color: var(--s-watch); } .call[data-st="Preparing"] { border-left-color: var(--s-prep); }
+.call[data-st="Submitted"] { border-left-color: var(--s-sub); } .call[data-st="Awarded"] { border-left-color: var(--s-won); }
+.call[data-st="Not applying"] { border-left-color: var(--s-no); opacity: .72; }
+.call .row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; padding: 12px 14px; }
+.call .name { font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
+.call .name a { color: inherit; text-decoration: none; border-bottom: 1px solid var(--line); }
+.call .name a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+.call .meta { grid-column: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: .83rem; color: var(--muted); }
+.call .right { grid-column: 2; grid-row: 1 / span 2; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.badge { border: 1px solid var(--line); border-radius: 999px; padding: 0 8px; font-size: .74rem; white-space: nowrap; }
+.badge.lead { border-color: var(--lead); color: var(--lead); } .badge.pi { border-color: var(--pi); color: var(--pi); }
+.badge.est { border-style: dashed; } .badge.kind { color: var(--ink); }
+.tags { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.tag { font-size: .72rem; border-radius: 4px; padding: 0 6px; background: var(--bg); border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.tag.me { border-color: var(--lead); color: var(--lead); } .tag.ind { border-color: var(--warn); color: var(--warn); }
+ol.rank .sub2 { grid-column: 2 / -1; display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; font-size: .78rem; color: var(--muted); }
+.filters { display: flex; flex-direction: column; gap: 8px; }
+.filters .lbl { font-size: .75rem; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.panel.pred { border-style: dashed; }
+.chip.off { opacity: .55; text-decoration: line-through; }
+.chip .x { margin-left: 6px; color: var(--muted); } .badge.mine { border-color: var(--accent); color: var(--accent); }
+select.st { padding: 4px 6px; border: 1px solid var(--line); border-radius: var(--r); background: var(--panel); font-size: .82rem; }
+details > summary { cursor: pointer; list-style: none; padding: 0 14px 10px; font-size: .82rem; color: var(--accent); width: max-content; }
+details > summary::-webkit-details-marker { display: none; }
+.body { border-top: 1px dashed var(--line); padding: 12px 14px 14px; display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 16px; }
+.why2 { background: var(--accent-soft); border-radius: 6px; padding: 8px 10px; font-size: .86rem; margin: 0 0 10px; }
+dl.facts { margin: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 12px; font-size: .86rem; }
+dl.facts dt { color: var(--muted); } dl.facts dd { margin: 0; overflow-wrap: anywhere; }
+.links { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; font-size: .85rem; }
+.notes label { font-size: .75rem; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.notes textarea { width: 100%; min-height: 7rem; resize: vertical; margin-top: 4px; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg); }
+.empty { border: 1px dashed var(--line); border-radius: var(--r); padding: 28px; text-align: center; color: var(--muted); background: var(--panel); }
+.form { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: 12px; margin-top: 12px; }
+.form label { display: flex; flex-direction: column; gap: 4px; font-size: .8rem; color: var(--muted); }
+.form input, .form select, .form textarea { padding: 7px 9px; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg); }
+.form .wide { grid-column: 1 / -1; }
+.err { color: var(--bad); font-size: .85rem; }
+.toast { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: var(--r); font-size: .85rem; z-index: 20; }
+footer { color: var(--muted); font-size: .8rem; }
+[hidden] { display: none !important; }
+@media (max-width: 680px) {
+  h1 { font-size: 1.7rem; }
+  .body { grid-template-columns: minmax(0, 1fr); }
+  .call .row { grid-template-columns: minmax(0, 1fr); }
+  .call .right { grid-column: 1; grid-row: auto; flex-direction: row; align-items: center; justify-content: space-between; }
+  .count { margin-left: 0; width: 100%; }
+  .call .dl { text-align: left; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Grant Radar</h1>
+      <p class="sub" id="lede">Funding calls in gut &amp; food microbiome, diet × gut, gut mycobiome and bioinformatics that researchers at Polish institutions can apply to. Your statuses and notes stay in this browser only.</p>
+    </div>
+    <div class="actions">
+      <button class="btn primary" id="addBtn" type="button">Add a call</button>
+      <button class="btn" id="topicsBtn" type="button" aria-expanded="false" aria-controls="topicsPanel">My topics</button>
+      <button class="btn" id="icsBtn" type="button">Export deadlines (.ics)</button>
+      <button class="btn" id="exportBtn" type="button">Back up my data</button>
+      <button class="btn" id="importBtn" type="button">Restore</button>
+      <input type="file" id="importFile" accept="application/json,.json" hidden>
+    </div>
+  </header>
+
+  <section class="kpis" aria-label="Summary">
+    <div class="kpi"><div class="n" id="k-open">—</div><div class="l">Calls with a deadline ahead</div></div>
+    <div class="kpi"><div class="n" id="k-30">—</div><div class="l">Closing in the next 30 days</div></div>
+    <div class="kpi"><div class="n" id="k-lead">—</div><div class="l">A PhD student can lead</div></div>
+    <div class="kpi"><div class="n" id="k-mine">—</div><div class="l">On my list (watching or preparing)</div></div>
+    <div class="kpi"><div class="n" id="k-checked">—</div><div class="l">List last checked</div></div>
+  </section>
+
+  <section class="panel" id="backupBox" hidden aria-label="Backup">
+    <h2>Your backup</h2>
+    <p class="hint" style="color:var(--muted);font-size:.85rem">Copy this text to keep your statuses and notes, or paste a backup here and choose Restore.</p>
+    <textarea id="backupText" rows="5" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r);background:var(--bg);font-family:var(--mono);font-size:.8rem"></textarea>
+    <div class="actions" style="margin-top:8px"><button class="btn primary" id="restoreGo" type="button" hidden>Restore</button><button class="btn" id="backupClose" type="button">Close</button></div>
+  </section>
+
+  <section class="panel" id="topicsPanel" hidden aria-labelledby="topicsTitle">
+    <h2 id="topicsTitle">My topics</h2>
+    <p class="hint">Choose the topics you care about. Calls that are only in topics you switch off are hidden everywhere. Add your own topic with a few keywords: any call whose name, funder, summary or eligibility mentions one of them is tagged with it. Saved in this browser and included in your backup.</p>
+    <div class="chips" id="topicToggles" role="group" aria-label="Topics to show"></div>
+    <form id="topicForm" class="form" novalidate>
+      <label>New topic<input id="t-name" maxlength="60" placeholder="e.g. Plant microbiome"></label>
+      <label class="wide">Keywords, separated by commas<input id="t-words" maxlength="300" placeholder="e.g. plant, soil, rhizosphere, crop"></label>
+    </form>
+    <div class="actions" style="margin-top:12px;align-items:center">
+      <button class="btn primary" type="submit" form="topicForm">Add topic</button>
+      <button class="btn" type="button" id="topicsReset">Show all, remove my topics</button>
+      <button class="btn" type="button" id="topicsClose">Close</button>
+      <span class="err" id="topicErr" role="alert"></span>
+    </div>
+  </section>
+
+  <section class="panel" id="formPanel" hidden aria-labelledby="formTitle">
+    <h2 id="formTitle">Add a call</h2>
+    <form id="callForm" novalidate>
+      <div class="form">
+        <label class="wide">Call name<input id="f-call" maxlength="200" required></label>
+        <label>Funder<input id="f-funder" maxlength="120"></label>
+        <label>Deadline<input id="f-deadline" type="date" required></label>
+        <label>Link<input id="f-url" type="url" placeholder="https://…"></label>
+        <label>Amount<input id="f-amount" maxlength="120"></label>
+        <label>Topic<select id="f-topic"></select></label>
+        <label>Type<select id="f-kind"></select></label>
+        <label>Who applies<select id="f-route"><option>You can lead</option><option>You can lead (conditions)</option><option>Via PI / postdoc</option></select></label>
+        <label class="wide">Short description<textarea id="f-summary" rows="2" maxlength="600"></textarea></label>
+      </div>
+      <div class="actions" style="margin-top:12px;align-items:center">
+        <button class="btn primary" type="submit">Save</button>
+        <button class="btn" type="button" id="cancelForm">Cancel</button>
+        <span class="err" id="formErr" role="alert"></span>
+      </div>
+    </form>
+  </section>
+
+  <section class="panel filters" aria-label="Type and applicant filters">
+    <div class="lbl">Show</div>
+    <div class="chips" id="kinds" role="group" aria-label="Type of funding"></div>
+    <div class="lbl">Who can apply</div>
+    <div class="chips" id="whos" role="group" aria-label="Who can apply"></div>
+  </section>
+
+  <div class="tabs" role="tablist" aria-label="View">
+    <button role="tab" id="tab-over" aria-selected="true" type="button">Overview</button>
+    <button role="tab" id="tab-all" aria-selected="false" type="button">All calls</button>
+  </div>
+
+  <section id="view-over" class="cols-wrap" style="display:flex;flex-direction:column;gap:16px">
+    <div class="cols">
+      <div class="panel">
+        <h2>You can apply yourself</h2>
+        <p class="hint">Open to a PhD student as applicant (some with conditions). Announced calls only, ranked by topic fit, feasibility and time left.</p>
+        <ol class="rank" id="rank-lead"></ol>
+      </div>
+      <div class="panel">
+        <h2>Team &amp; consortium calls</h2>
+        <p class="hint">Someone else applies (a PhD holder, a consortium or a company; see the tags) and you join the team; a PhD position or bioinformatics work can be budgeted. Announced calls only.</p>
+        <ol class="rank" id="rank-pi"></ol>
+      </div>
+    </div>
+    <div class="panel pred">
+      <h2>Predicted, not yet announced</h2>
+      <p class="hint">Dates are estimated from previous years' cycles. Check the funder page before planning around them. Calls you can apply to yourself come first.</p>
+      <ol class="rank" id="rank-pred"></ol>
+    </div>
+    <div class="panel">
+      <h2>Deadlines ahead, by topic</h2>
+      <p class="hint">Each dot is a deadline; hollow dots are predicted dates. Hover or tap for details; click to open the call.</p>
+      <div class="chart" id="chart"></div>
+      <div class="legend"><span><span class="dot" style="background:var(--lead)"></span>You can lead</span><span><span class="dot" style="background:var(--pi)"></span>Via PI / postdoc</span><span><span class="dot" style="background:transparent;border:1.5px solid var(--muted)"></span>Predicted date</span></div>
+    </div>
+  </section>
+
+  <section id="view-all" hidden style="display:flex;flex-direction:column;gap:12px">
+    <div class="chips" id="chips" role="group" aria-label="Topic filter"></div>
+    <div class="bar">
+      <input type="search" id="q" placeholder="Search calls, funders, notes…" aria-label="Search">
+      <select id="route" aria-label="Who applies"><option value="">Anyone applies</option><option value="lead">I can lead</option><option value="pi">Via PI / postdoc</option></select>
+      <select id="stf" aria-label="My status"><option value="">Any status</option></select>
+      <select id="sort" aria-label="Sort"><option value="deadline">Soonest deadline</option><option value="priority">Priority</option></select>
+      <label class="chk"><input type="checkbox" id="closed"> Show closed</label>
+      <label class="chk"><input type="checkbox" id="hidePred"> Hide predicted</label>
+      <span class="count" id="count"></span>
+    </div>
+    <div class="list" id="list"></div>
+  </section>
+
+  <footer id="foot">Deadlines were checked on funder or university pages; rows marked “Predicted” are estimated from earlier rounds. Always confirm on the call page before applying. Your statuses and notes are stored only in this browser — use “Back up my data” to move them.</footer>
+</div>
+
+<script id="grants-data" type="application/json">/*__DATA__*/</script>
+<script>
+(function () {
+  "use strict";
+  const TOPICS = ["Gut microbiome", "Diet × gut", "Fungi / mycobiome", "Food microbiome", "Bioinformatics", "General"];
+  const STATUSES = ["Not tracked", "Watching", "Preparing", "Submitted", "Awarded", "Not applying"];
+  const KEY = "grant-radar:v1";
+  const ARTIFACT = !!window.__GR_ARTIFACT__;
+  const $ = s => document.querySelector(s);
+  const el = (t, c, txt) => { const e = document.createElement(t); if (c) e.className = c; if (txt != null) e.textContent = txt; return e; };
+  const isUrl = u => typeof u === "string" && /^https?:\/\//i.test(u);
+  const slug = s => String(s || "").toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80) || "call";
+  const today = () => { const n = new Date(); return Date.UTC(n.getFullYear(), n.getMonth(), n.getDate()); };
+  const daysLeft = d => { const t = Date.parse(d); return isNaN(t) ? null : Math.round((t - today()) / 864e5); };
+  const fmt = d => { const t = new Date(d + "T00:00:00Z"); return isNaN(t) ? (d || "") : t.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }); };
+  const dataTopicsOf = c => String(c.topics || "").split(";").map(s => s.trim()).filter(Boolean);
+  // custom topics: {name, words[]}; matched against the call's text
+  function customHits(c) {
+    const cs = (store.topics && store.topics.custom) || [];
+    if (!cs.length) return [];
+    const txt = [c.call, c.funder, c.summary, c.eligibility, c.topics].join(" ").toLowerCase();
+    return cs.filter(t => t.words.some(w => w && txt.includes(w))).map(t => t.name);
+  }
+  const topicsOf = c => { const a = dataTopicsOf(c); customHits(c).forEach(n => { if (!a.includes(n)) a.push(n); }); return a; };
+  const canLead = c => String(c.route || "").startsWith("You can lead");
+  const KINDS = ["Research grant", "Conference / travel", "Training / lab visit"];
+  const KIND_LABELS = { "Research grant": "Research grants", "Conference / travel": "Conference & travel funding", "Training / lab visit": "Training & lab visits" };
+  const WHO = ["PhD student", "Early-career PhD", "Mid-career PhD", "Any PhD holder", "Senior PI", "Consortium", "Industry partners welcome", "Industry-led"];
+  const kindOf = c => c.kind || "Research grant";
+  const whoOf = c => String(c.applicants || "").split(";").map(s => s.trim()).filter(Boolean);
+  const isPred = c => c.certainty === "Expected";
+  function tagsEl(c) {
+    const t = el("span", "tags");
+    whoOf(c).forEach(w => t.append(el("span", "tag" + (/Industry/.test(w) ? " ind" : w === "PhD student" ? " me" : ""), w)));
+    return t;
+  }
+  function toast(m) { const t = el("div", "toast", m); t.setAttribute("role", "status"); document.body.append(t); setTimeout(() => t.remove(), 2600); }
+
+  // ---- storage (per browser) ----
+  const cleanTopics = t => ({ hidden: Array.isArray(t && t.hidden) ? t.hidden.map(String) : [],
+    custom: Array.isArray(t && t.custom) ? t.custom.filter(x => x && x.name).map(x => ({ name: String(x.name).slice(0, 60), words: (Array.isArray(x.words) ? x.words : []).map(w => String(w).trim().toLowerCase()).filter(Boolean) })) : [] });
+  let store = { track: {}, mine: [], topics: cleanTopics() };
+  try { const raw = localStorage.getItem(KEY); if (raw) { const s = JSON.parse(raw); if (s && typeof s === "object") store = { track: s.track || {}, mine: Array.isArray(s.mine) ? s.mine : [], topics: cleanTopics(s.topics) }; } } catch (e) {}
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) { toast("Couldn't save in this browser (private mode?)"); } }
+  const track = id => store.track[id] || {};
+  const statusOf = id => track(id).status || "Not tracked";
+  function setTrack(id, patch) { store.track[id] = Object.assign({}, track(id), patch, { updated: new Date().toISOString() }); save(); }
+
+  // ---- data ----
+  let radar = [];
+  try { radar = JSON.parse(document.getElementById("grants-data").textContent); } catch (e) { radar = []; }
+  // every topic in the data (known ones in their usual order, then any others), then my own topics
+  function allTopics() {
+    const seen = new Set(radar.concat(store.mine).flatMap(dataTopicsOf));
+    const a = TOPICS.filter(t => seen.has(t)).concat([...seen].filter(t => !TOPICS.includes(t)).sort());
+    store.topics.custom.forEach(t => { if (!a.includes(t.name)) a.push(t.name); });
+    return a;
+  }
+  const shownTopics = () => allTopics().filter(t => !store.topics.hidden.includes(t));
+  const wanted = c => c.source === "mine" || !store.topics.hidden.length || topicsOf(c).some(t => !store.topics.hidden.includes(t));
+  function allCalls() {
+    const r = radar.map(c => Object.assign({ id: "r-" + slug(c.call), source: "radar" }, c));
+    return r.concat(store.mine.map(c => Object.assign({ source: "mine" }, c)));
+  }
+  async function tryFresh() {
+    if (ARTIFACT || !/^https?:$/.test(location.protocol)) return;
+    try { const res = await fetch("data/grants.json", { cache: "no-cache" }); if (!res.ok) return; const d = await res.json(); if (Array.isArray(d) && d.length) { radar = d; fillTopicSelect(); renderChips(); render(); } } catch (e) {}
+  }
+
+  // ---- UI state ----
+  const ui = { view: "over", topics: new Set(), kinds: new Set(), whos: new Set(), hidePred: false, q: "", route: "", st: "", sort: "deadline", closed: false, open: new Set() };
+  try { const v = localStorage.getItem(KEY + ":view"); if (v === "all" || v === "over") ui.view = v; } catch (e) {}
+
+  const typeOk = c => (!ui.kinds.size || ui.kinds.has(kindOf(c))) && (!ui.whos.size || whoOf(c).some(w => ui.whos.has(w)));
+  const evTitle = c => (isPred(c) ? "Expected deadline (predicted): " : "Deadline: ") + c.call;
+
+  function dlSpan(c) {
+    const d = daysLeft(c.deadline), w = el("div", "dl");
+    w.append(document.createTextNode((isPred(c) ? "~" : "") + fmt(c.deadline)));
+    const s = el("div", d == null ? "" : d < 0 ? "past" : d <= 7 ? "urgent" : d <= 30 ? "soon" : "", d == null ? "" : d < 0 ? "closed" : d === 0 ? "today" : d === 1 ? "1 day" : d + " days");
+    w.append(s); return w;
+  }
+  function gcal(c) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(c.deadline || "")) return null;
+    const a = c.deadline.replace(/-/g, ""), e = new Date(c.deadline + "T00:00:00Z"); e.setUTCDate(e.getUTCDate() + 1);
+    const b = e.toISOString().slice(0, 10).replace(/-/g, "");
+    const det = [c.deadline_note, c.summary, isUrl(c.url) ? c.url : ""].filter(Boolean).join("\n\n");
+    return "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" + encodeURIComponent(evTitle(c)) + "&dates=" + a + "/" + b + "&details=" + encodeURIComponent(det);
+  }
+
+  function renderKpis(calls) {
+    const ahead = calls.filter(c => (daysLeft(c.deadline) ?? 0) >= 0);
+    $("#k-open").textContent = ahead.length;
+    $("#k-30").textContent = ahead.filter(c => daysLeft(c.deadline) <= 30).length;
+    $("#k-lead").textContent = ahead.filter(canLead).length;
+    $("#k-mine").textContent = calls.filter(c => ["Watching", "Preparing"].includes(statusOf(c.id))).length;
+    const lc = radar.map(c => c.last_checked).filter(Boolean).sort().pop();
+    $("#k-checked").textContent = lc ? fmt(lc).replace(/ \d{4}$/, "") : "—";
+  }
+
+  function renderRank(calls) {
+    const ahead = calls.filter(c => (daysLeft(c.deadline) ?? 0) >= 0 && statusOf(c.id) !== "Not applying" && typeOk(c));
+    const byPrio = (a, b) => (a.priority ?? 99) - (b.priority ?? 99) || (daysLeft(a.deadline) ?? 9e9) - (daysLeft(b.deadline) ?? 9e9);
+    const lists = [
+      ["#rank-lead", ahead.filter(c => !isPred(c) && canLead(c)).sort(byPrio).slice(0, 8), "Nothing open right now."],
+      ["#rank-pi", ahead.filter(c => !isPred(c) && !canLead(c)).sort(byPrio).slice(0, 8), "Nothing open right now."],
+      ["#rank-pred", ahead.filter(isPred).sort((a, b) => (canLead(a) ? 0 : 1) - (canLead(b) ? 0 : 1) || byPrio(a, b)), "No predicted calls match these filters."]
+    ];
+    lists.forEach(([sel, rows, none]) => {
+      const ol = $(sel); ol.textContent = "";
+      if (!rows.length) { const li = el("li"); li.append(el("span"), el("span", "why", none)); ol.append(li); return; }
+      rows.forEach((c, i) => {
+        const li = el("li");
+        li.append(el("span", "p", String(i + 1)));
+        const nm = el("span", "nm"); const b = el("button", null, c.call); b.type = "button";
+        b.addEventListener("click", () => openCall(c.id)); nm.append(b);
+        const st = statusOf(c.id); if (st !== "Not tracked") { nm.append(document.createTextNode(" ")); nm.append(el("span", "badge", st)); }
+        li.append(nm, dlSpan(c));
+        const sub = el("span", "sub2"); sub.append(el("span", "badge kind", kindOf(c)));
+        if (whoOf(c).length) sub.append(tagsEl(c));
+        if (!isPred(c) && c.certainty && c.certainty !== "Confirmed") sub.append(el("span", null, c.certainty.toLowerCase() + " date"));
+        li.append(sub);
+        if (c.priority_note) li.append(el("span", "why", c.priority_note));
+        ol.append(li);
+      });
+    });
+  }
+
+  function renderChart(calls) {
+    const box = $("#chart"); box.textContent = "";
+    const rows = calls.filter(c => { const d = daysLeft(c.deadline); return d != null && d >= 0 && statusOf(c.id) !== "Not applying" && typeOk(c); });
+    if (!rows.length) { box.append(el("div", "empty", "No upcoming deadlines.")); return; }
+    const lanes = shownTopics().filter(t => rows.some(c => topicsOf(c).includes(t)));
+    const W = Math.max(320, box.clientWidth || 800), narrow = W < 560;
+    const L = narrow ? 92 : 132, R = 16, T = 22, lh = 34, H = T + lanes.length * lh + 8;
+    const t0 = today(), maxD = Math.max(60, ...rows.map(c => daysLeft(c.deadline)));
+    const x = d => L + (W - L - R) * (d / maxD);
+    const NS = "http://www.w3.org/2000/svg", svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.setAttribute("role", "img"); svg.setAttribute("aria-label", "Upcoming deadlines by topic");
+    const mk = (t, a) => { const n = document.createElementNS(NS, t); for (const k in a) n.setAttribute(k, a[k]); return n; };
+    // month ticks
+    const start = new Date(t0); start.setUTCDate(1); start.setUTCMonth(start.getUTCMonth() + 1);
+    const step = maxD > 300 ? (narrow ? 3 : 2) : 1;
+    for (let m = new Date(start); (m - t0) / 864e5 <= maxD; m.setUTCMonth(m.getUTCMonth() + step)) {
+      const d = (m - t0) / 864e5, xx = x(d);
+      svg.append(mk("line", { x1: xx, x2: xx, y1: T - 6, y2: H - 6, stroke: "var(--line)" }));
+      const tx = mk("text", { x: xx + 3, y: T - 8 }); tx.textContent = m.toLocaleDateString("en-GB", { month: "short", timeZone: "UTC" }) + (m.getUTCMonth() === 0 ? " " + String(m.getUTCFullYear()).slice(2) : ""); svg.append(tx);
+    }
+    const tip = el("div", "tip"); tip.hidden = true; box.append(tip);
+    lanes.forEach((t, i) => {
+      const y = T + i * lh + lh / 2;
+      svg.append(mk("line", { x1: L, x2: W - R, y1: y, y2: y, stroke: "var(--line)", "stroke-dasharray": "2 4" }));
+      const lab = mk("text", { x: 0, y: y + 4 }); lab.textContent = narrow ? t.replace(" / mycobiome", "").replace(" microbiome", " micro.") : t; svg.append(lab);
+      rows.filter(c => topicsOf(c).includes(t)).forEach(c => {
+        const est = isPred(c), col = canLead(c) ? "var(--lead)" : "var(--pi)";
+        const dot = mk("circle", { cx: x(daysLeft(c.deadline)), cy: y, r: 6, fill: est ? "var(--panel)" : col, stroke: col, "stroke-width": 2, tabindex: 0, style: "cursor:pointer" });
+        const show = () => {
+          tip.textContent = `${c.call} — ${est ? "predicted ~" : ""}${fmt(c.deadline)} (${daysLeft(c.deadline)} days) · ${kindOf(c)}${whoOf(c).length ? " · " + whoOf(c).join(", ") : ""}`; tip.hidden = false;
+          const bb = box.getBoundingClientRect(), db = dot.getBoundingClientRect();
+          let lx = db.left - bb.left + 10; const tw = Math.min(256, bb.width - 8);
+          if (lx + tw > bb.width) lx = Math.max(0, db.left - bb.left - tw - 4);
+          tip.style.left = lx + "px"; tip.style.top = (db.top - bb.top + 12) + "px";
+        };
+        dot.addEventListener("mouseenter", show); dot.addEventListener("focus", show);
+        dot.addEventListener("mouseleave", () => tip.hidden = true); dot.addEventListener("blur", () => tip.hidden = true);
+        dot.addEventListener("click", () => openCall(c.id)); dot.addEventListener("keydown", e => { if (e.key === "Enter") openCall(c.id); });
+        svg.append(dot);
+      });
+    });
+    box.prepend(svg);
+  }
+
+  function filtered(calls) {
+    const q = ui.q.toLowerCase();
+    let rows = calls.filter(c => {
+      const d = daysLeft(c.deadline), st = statusOf(c.id);
+      return (ui.closed || d == null || d >= 0 || ["Submitted", "Awarded"].includes(st))
+        && (!ui.topics.size || topicsOf(c).some(t => ui.topics.has(t)))
+        && typeOk(c) && !(ui.hidePred && isPred(c))
+        && (!ui.route || (ui.route === "lead" ? canLead(c) : !canLead(c)))
+        && (!ui.st || st === ui.st)
+        && (!q || [c.call, c.funder, c.kind, c.applicants, c.topics, c.summary, c.eligibility, c.region, c.amount, c.lead_requires, track(c.id).notes].join(" ").toLowerCase().includes(q));
+    });
+    rows.sort((a, b) => {
+      const pa = (daysLeft(a.deadline) ?? 9e9) < 0, pb = (daysLeft(b.deadline) ?? 9e9) < 0;
+      if (pa !== pb) return pa ? 1 : -1;
+      if (ui.sort === "priority") return (canLead(a) ? 0 : 1) - (canLead(b) ? 0 : 1) || (a.priority ?? 99) - (b.priority ?? 99);
+      return (daysLeft(a.deadline) ?? 9e9) - (daysLeft(b.deadline) ?? 9e9);
+    });
+    return rows;
+  }
+
+  function card(c) {
+    const st = statusOf(c.id), art = el("article", "call"); art.dataset.st = st; art.id = "c-" + c.id;
+    const row = el("div", "row"), name = el("div", "name");
+    if (isUrl(c.url)) { const a = el("a", null, c.call); a.href = c.url; a.target = "_blank"; a.rel = "noopener"; name.append(a, document.createTextNode(" ↗")); } else name.textContent = c.call;
+    const meta = el("div", "meta");
+    if (c.funder) meta.append(el("span", null, c.funder));
+    meta.append(el("span", null, topicsOf(c).join(" · ")));
+    meta.append(el("span", "badge kind", kindOf(c)));
+    if (c.source === "mine") meta.append(el("span", "badge mine", "Added by me"));
+    if (isPred(c)) meta.append(el("span", "badge est", "Predicted date"));
+    else if (c.certainty && c.certainty !== "Confirmed") meta.append(el("span", "badge est", c.certainty + " date"));
+    if (whoOf(c).length) meta.append(tagsEl(c));
+    const right = el("div", "right"); right.append(dlSpan(c));
+    const sel = el("select", "st"); sel.setAttribute("aria-label", "My status for " + c.call);
+    STATUSES.forEach(s => { const o = el("option", null, s); o.value = s; o.selected = s === st; sel.append(o); });
+    sel.addEventListener("change", () => { setTrack(c.id, { status: sel.value }); toast(`Marked as ${sel.value}`); render(); });
+    right.append(sel); row.append(name, right, meta); art.append(row);
+    const det = el("details"); det.open = ui.open.has(c.id);
+    const sum = el("summary", null, det.open ? "Hide details" : "Details, links & my notes");
+    det.addEventListener("toggle", () => { det.open ? ui.open.add(c.id) : ui.open.delete(c.id); sum.textContent = det.open ? "Hide details" : "Details, links & my notes"; });
+    det.append(sum);
+    const body = el("div", "body"), left = el("div");
+    if (c.priority_note) left.append(el("p", "why2", c.priority_note));
+    const dl = el("dl", "facts");
+    [["About", c.summary], ["Type", kindOf(c)], ["Who can apply", whoOf(c).join(", ")], ["Eligibility", c.eligibility], ["Lead applicant", c.lead_requires], ["Amount", c.amount], ["Region", c.region], ["Opens", c.opens ? fmt(c.opens) : ""], ["Deadline", [(isPred(c) ? "Predicted ~" : "") + fmt(c.deadline), c.deadline_note].filter(Boolean).join(" — ")], ["Last checked", c.last_checked ? fmt(c.last_checked) : ""]]
+      .forEach(([k, v]) => { if (v) dl.append(el("dt", null, k), el("dd", null, v)); });
+    left.append(dl);
+    const links = el("div", "links");
+    if (isUrl(c.url)) { const a = el("a", null, "Open call page ↗"); a.href = c.url; a.target = "_blank"; a.rel = "noopener"; links.append(a); }
+    const g = gcal(c); if (g) { const a = el("a", null, "Add to Google Calendar ↗"); a.href = g; a.target = "_blank"; a.rel = "noopener"; links.append(a); }
+    if (c.source === "mine") { const d = el("button", "btn", "Delete this call"); d.type = "button"; d.addEventListener("click", () => { if (!d.dataset.ok) { d.dataset.ok = 1; d.textContent = "Click again to delete"; return; } store.mine = store.mine.filter(m => m.id !== c.id); delete store.track[c.id]; save(); render(); toast("Deleted"); }); links.append(d); }
+    left.append(links);
+    const notes = el("div", "notes"), lab = el("label", null, "My notes"); lab.htmlFor = "n-" + c.id;
+    const ta = el("textarea"); ta.id = "n-" + c.id; ta.placeholder = "To-dos, contacts, draft status…"; ta.value = track(c.id).notes || "";
+    let tm; ta.addEventListener("input", () => { clearTimeout(tm); tm = setTimeout(() => setTrack(c.id, { notes: ta.value }), 500); });
+    notes.append(lab, ta); body.append(left, notes); det.append(body); art.append(det);
+    return art;
+  }
+
+  function renderList(calls) {
+    const rows = filtered(calls), list = $("#list"); list.textContent = "";
+    $("#count").textContent = `${rows.length} of ${calls.length} calls`;
+    if (!rows.length) { list.append(el("div", "empty", "No calls match these filters.")); return; }
+    rows.forEach(c => list.append(card(c)));
+  }
+
+  function render() {
+    const calls = allCalls().filter(wanted);
+    renderKpis(calls);
+    $("#tab-over").setAttribute("aria-selected", String(ui.view === "over"));
+    $("#tab-all").setAttribute("aria-selected", String(ui.view === "all"));
+    $("#view-over").hidden = ui.view !== "over"; $("#view-all").hidden = ui.view !== "all";
+    if (ui.view === "over") { renderRank(calls); renderChart(calls); } else renderList(calls);
+  }
+
+  function openCall(id) {
+    ui.view = "all"; ui.open.add(id); ui.closed = true; $("#closed").checked = true; ui.topics.clear(); ui.q = ""; $("#q").value = ""; ui.route = ""; $("#route").value = ""; ui.st = ""; $("#stf").value = ""; ui.kinds.clear(); ui.whos.clear(); ui.hidePred = false; $("#hidePred").checked = false;
+    renderChips(); render();
+    const n = document.getElementById("c-" + id); if (n) n.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function chipRow(box, allLabel, items, set, label) {
+    box.textContent = "";
+    const all = el("button", "chip", allLabel); all.type = "button"; all.setAttribute("aria-pressed", String(!set.size));
+    all.addEventListener("click", () => { set.clear(); renderChips(); render(); }); box.append(all);
+    items.forEach(v => { const b = el("button", "chip", label ? label(v) : v); b.type = "button"; b.setAttribute("aria-pressed", String(set.has(v)));
+      b.addEventListener("click", () => { set.has(v) ? set.delete(v) : set.add(v); renderChips(); render(); }); box.append(b); });
+  }
+  function renderChips() {
+    chipRow($("#kinds"), "Everything", KINDS, ui.kinds, k => KIND_LABELS[k]);
+    const seen = new Set(allCalls().flatMap(whoOf));
+    chipRow($("#whos"), "Anyone", WHO.filter(w => seen.has(w)).concat([...seen].filter(w => !WHO.includes(w))), ui.whos);
+    const box = $("#chips"); box.textContent = "";
+    shownTopics().forEach(t => { const b = el("button", "chip", t); b.type = "button"; b.setAttribute("aria-pressed", String(ui.topics.has(t)));
+      b.addEventListener("click", () => { ui.topics.has(t) ? ui.topics.delete(t) : ui.topics.add(t); renderChips(); render(); }); box.append(b); });
+  }
+
+  // ---- controls ----
+  const setView = v => { ui.view = v; try { localStorage.setItem(KEY + ":view", v); } catch (e) {} render(); };
+  $("#tab-over").addEventListener("click", () => setView("over"));
+  $("#tab-all").addEventListener("click", () => setView("all"));
+  $("#q").addEventListener("input", e => { ui.q = e.target.value; render(); });
+  $("#route").addEventListener("change", e => { ui.route = e.target.value; render(); });
+  $("#stf").addEventListener("change", e => { ui.st = e.target.value; render(); });
+  $("#sort").addEventListener("change", e => { ui.sort = e.target.value; render(); });
+  $("#closed").addEventListener("change", e => { ui.closed = e.target.checked; render(); });
+  $("#hidePred").addEventListener("change", e => { ui.hidePred = e.target.checked; render(); });
+  KINDS.forEach(k => { const o = el("option", null, k); $("#f-kind").append(o); });
+  STATUSES.forEach(s => { const o = el("option", null, s); o.value = s; $("#stf").append(o); });
+  function fillTopicSelect() { const sel = $("#f-topic"); sel.textContent = ""; allTopics().filter(t => !store.topics.custom.some(c => c.name === t)).forEach(t => sel.append(el("option", null, t))); }
+  fillTopicSelect();
+
+  // ---- my topics panel ----
+  function renderTopics() {
+    const box = $("#topicToggles"); box.textContent = "";
+    allTopics().forEach(t => {
+      const on = !store.topics.hidden.includes(t), mine = store.topics.custom.find(c => c.name === t);
+      const b = el("button", "chip" + (on ? "" : " off"), t); b.type = "button"; b.setAttribute("aria-pressed", String(on));
+      if (mine) b.title = "Keywords: " + mine.words.join(", ");
+      b.addEventListener("click", () => {
+        store.topics.hidden = on ? store.topics.hidden.concat(t) : store.topics.hidden.filter(x => x !== t);
+        ui.topics.delete(t); save(); renderTopics(); renderChips(); render();
+      });
+      box.append(b);
+      if (mine) { const x = el("button", "chip", "Remove “" + t + "”"); x.type = "button";
+        x.addEventListener("click", () => { store.topics.custom = store.topics.custom.filter(c => c.name !== t); store.topics.hidden = store.topics.hidden.filter(h => h !== t); ui.topics.delete(t); save(); renderTopics(); renderChips(); render(); toast("Topic removed"); });
+        box.append(x); }
+    });
+  }
+  $("#topicsBtn").addEventListener("click", () => { const p = $("#topicsPanel"); p.hidden = !p.hidden; $("#topicsBtn").setAttribute("aria-expanded", String(!p.hidden)); if (!p.hidden) { renderTopics(); $("#t-name").focus(); } });
+  $("#topicsClose").addEventListener("click", () => { $("#topicsPanel").hidden = true; $("#topicsBtn").setAttribute("aria-expanded", "false"); });
+  $("#topicsReset").addEventListener("click", () => { store.topics = cleanTopics(); ui.topics.clear(); save(); renderTopics(); renderChips(); render(); toast("Showing all topics"); });
+  $("#topicForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const name = $("#t-name").value.trim(), words = $("#t-words").value.split(",").map(w => w.trim().toLowerCase()).filter(Boolean);
+    if (!name) return void ($("#topicErr").textContent = "Give the topic a name.");
+    if (!words.length) return void ($("#topicErr").textContent = "Add at least one keyword.");
+    if (allTopics().includes(name)) return void ($("#topicErr").textContent = "That topic already exists.");
+    store.topics.custom.push({ name, words }); save(); $("#topicErr").textContent = ""; $("#topicForm").reset();
+    const n = allCalls().filter(c => customHits(c).includes(name)).length;
+    renderTopics(); renderChips(); render(); toast(`Added “${name}”: ${n} call${n === 1 ? "" : "s"} match`);
+  });
+  let rz; window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => { if (ui.view === "over") renderChart(allCalls().filter(wanted)); }, 150); });
+
+  $("#addBtn").addEventListener("click", () => { $("#formPanel").hidden = false; $("#formErr").textContent = ""; $("#f-call").focus(); });
+  $("#cancelForm").addEventListener("click", () => { $("#formPanel").hidden = true; });
+  $("#callForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const call = $("#f-call").value.trim(), deadline = $("#f-deadline").value, url = $("#f-url").value.trim();
+    if (!call) return void ($("#formErr").textContent = "Give the call a name.");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(deadline)) return void ($("#formErr").textContent = "Pick a deadline.");
+    if (url && !isUrl(url)) return void ($("#formErr").textContent = "The link must start with https://");
+    const id = "mine-" + slug(call) + "-" + Math.random().toString(36).slice(2, 6);
+    store.mine.push({ id, call, funder: $("#f-funder").value.trim(), deadline, url, amount: $("#f-amount").value.trim(), topics: $("#f-topic").value, kind: $("#f-kind").value, route: $("#f-route").value, summary: $("#f-summary").value.trim(), certainty: "Confirmed" });
+    store.track[id] = { status: "Watching", updated: new Date().toISOString() }; save();
+    $("#callForm").reset(); $("#formPanel").hidden = true; toast("Call added"); render();
+  });
+
+  function download(name, text, type) {
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name;
+    document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  }
+  async function copyBackup() {
+    const text = JSON.stringify({ app: "grant-radar", version: 1, exported: new Date().toISOString(), ...store });
+    try { await navigator.clipboard.writeText(text); toast("Backup copied — paste it into a note or email to keep it"); }
+    catch (e) { const box = $("#backupBox"); box.hidden = false; const ta = $("#backupText"); ta.value = text; ta.focus(); ta.select(); toast("Copy the selected text to keep your backup"); }
+  }
+  function restoreFrom(text) {
+    try { const d = JSON.parse(text); if (!d || typeof d.track !== "object") throw 0;
+      store = { track: d.track || {}, mine: Array.isArray(d.mine) ? d.mine : [], topics: cleanTopics(d.topics) }; save(); renderChips(); renderTopics(); render(); toast("Your data was restored"); return true;
+    } catch (err) { toast("That isn't a Grant Radar backup."); return false; }
+  }
+  if (ARTIFACT) {
+    $("#icsBtn").hidden = true; $("#exportBtn").textContent = "Copy backup"; $("#importBtn").textContent = "Paste backup";
+    $("#exportBtn").addEventListener("click", copyBackup);
+    $("#importBtn").addEventListener("click", () => { const box = $("#backupBox"); box.hidden = false; $("#backupText").value = ""; $("#backupText").focus(); $("#restoreGo").hidden = false; });
+    $("#restoreGo").addEventListener("click", () => { if (restoreFrom($("#backupText").value)) { $("#backupBox").hidden = true; } });
+    $("#backupClose").addEventListener("click", () => { $("#backupBox").hidden = true; $("#restoreGo").hidden = true; });
+    $("#foot").textContent = "Deadlines were checked on funder or university pages; rows marked “Predicted” are estimated from earlier rounds. Always confirm on the call page before applying. Your statuses and notes are stored only in this browser. Use “Copy backup” to keep a copy, and each call's “Add to Google Calendar” link for reminders.";
+  }
+  if (!ARTIFACT) $("#exportBtn").addEventListener("click", () => download("grant-radar-my-data.json", JSON.stringify({ app: "grant-radar", version: 1, exported: new Date().toISOString(), ...store }, null, 2), "application/json"));
+  if (!ARTIFACT) $("#importBtn").addEventListener("click", () => $("#importFile").click());
+  $("#importFile").addEventListener("change", async e => {
+    const f = e.target.files[0]; if (!f) return;
+    restoreFrom(await f.text());
+    e.target.value = "";
+  });
+  $("#icsBtn").addEventListener("click", () => {
+    const calls = allCalls().filter(wanted).filter(c => (daysLeft(c.deadline) ?? -1) >= 0 && statusOf(c.id) !== "Not applying");
+    const mine = calls.filter(c => ["Watching", "Preparing", "Submitted"].includes(statusOf(c.id)));
+    const pick = mine.length ? mine : calls;
+    const esc = s => String(s || "").replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+    const stamp = new Date().toISOString().replace(/[-:]/g, "").slice(0, 15) + "Z";
+    const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Grant Radar//EN", "CALSCALE:GREGORIAN"];
+    pick.forEach(c => { const d = c.deadline.replace(/-/g, ""), n = new Date(c.deadline + "T00:00:00Z"); n.setUTCDate(n.getUTCDate() + 1);
+      lines.push("BEGIN:VEVENT", "UID:" + c.id + "@grant-radar", "DTSTAMP:" + stamp, "DTSTART;VALUE=DATE:" + d, "DTEND;VALUE=DATE:" + n.toISOString().slice(0, 10).replace(/-/g, ""),
+        "SUMMARY:" + esc(evTitle(c)), "DESCRIPTION:" + esc([c.deadline_note, isUrl(c.url) ? c.url : ""].filter(Boolean).join("\n")), "END:VEVENT"); });
+    lines.push("END:VCALENDAR");
+    download("grant-deadlines.ics", lines.join("\r\n"), "text/calendar");
+    toast(mine.length ? `Exported ${pick.length} deadlines from your list` : `Exported all ${pick.length} upcoming deadlines`);
+  });
+
+  renderChips(); render(); tryFresh();
+})();
+</script>
+</body>
+</html>
