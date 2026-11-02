@@ -1,62 +1,40 @@
 {
   "app": "grant-radar",
   "version": 1,
-  "exported": "2026-11-02T12:00:00Z",
-  "_about": "Made-up example of a Grant Radar backup. Open the app, choose Restore and pick this file to see how statuses, notes, your own calls and custom topics look. Restoring replaces what is saved in that browser.",
+  "exported": "2026-11-02T12:50:00Z",
+  "_about": "Example backup: the maintainer's real statuses and notes for the built-in call list. Open the app, choose Restore and pick this file to see how tracking looks. Restoring replaces what is saved in that browser.",
   "track": {
-    "r-febs-short-term-fellowship-1st-call-2027-visits": {
+    "r-ai-powered-foodome-characterization-cl6-2027-02-farm2fork-08": {
+      "status": "Watching",
+      "updated": "2026-10-28T11:30:00Z",
+      "notes": "Consortium: I can put it together. Still need a PI to coordinate/lead the application."
+    },
+    "r-biocodex-gut-microbiota-international-call": {
       "status": "Preparing",
-      "notes": "Example: ask two host labs by mid-November; join the national biochemical society first.",
-      "updated": "2026-11-02T12:00:00Z"
+      "updated": "2026-10-28T10:00:00Z",
+      "notes": "PI secured; proposal in progress."
     },
-    "r-ncn-preludium-26": {
-      "status": "Watching",
-      "notes": "Example: draft the aims over winter; check the call text in March.",
-      "updated": "2026-11-02T12:00:00Z"
+    "r-biocodex-national-research-grant-poland-2026": {
+      "status": "Submitted",
+      "updated": "2026-10-28T00:00:00Z"
     },
-    "r-ncbr-nutritech-3rd-call": {
-      "status": "Watching",
-      "notes": "Example: ask the supervisor whether a food-company partner is interested.",
-      "updated": "2026-11-02T12:00:00Z"
-    },
-    "r-erc-starting-grant-2027": {
+    "r-embo-practical-course-microbial-metagenomics-a-360o-approach-2027": {
       "status": "Not applying",
-      "notes": "Example: not eligible yet.",
-      "updated": "2026-11-02T12:00:00Z"
+      "updated": "2026-10-28T10:00:00Z",
+      "notes": "Course is aimed at beginners."
     },
-    "mine-example-department-travel-fund": {
+    "r-fulbright-junior-research-award-2028-29": {
       "status": "Watching",
-      "notes": "Example note on your own call.",
-      "updated": "2026-11-02T12:00:00Z"
+      "updated": "2026-10-28T11:30:00Z"
+    },
+    "r-fundacja-nutricia-research-grant-2027": {
+      "status": "Watching",
+      "updated": "2026-10-28T11:00:00Z"
     }
   },
-  "mine": [
-    {
-      "id": "mine-example-department-travel-fund",
-      "call": "Example: department travel fund",
-      "funder": "My faculty",
-      "deadline": "2027-03-31",
-      "url": "",
-      "amount": "up to PLN 3,000",
-      "topics": "General",
-      "kind": "Conference / travel",
-      "route": "You can lead",
-      "summary": "Made-up call added by hand to show how your own calls appear.",
-      "certainty": "Confirmed"
-    }
-  ],
+  "mine": [],
   "topics": {
     "hidden": [],
-    "custom": [
-      {
-        "name": "Fungi & yeasts",
-        "words": [
-          "fungal",
-          "yeast",
-          "candida",
-          "mycology"
-        ]
-      }
-    ]
+    "custom": []
   }
 }

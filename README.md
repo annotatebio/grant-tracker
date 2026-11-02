@@ -38,7 +38,7 @@ Or they simply open https://annotatebio.github.io/grant-tracker/ and always see 
 
 Restore **replaces** whatever is saved in that browser, so do it before you start tracking on the new computer. Each person's tracking is separate. A colleague can restore your backup to start from your notes, but changes don't sync afterwards. A backup also carries your *My topics* settings.
 
-**To see an example first:** restore `data/example-backup.json`. It has made-up statuses, notes, one hand-added call and one custom topic. Restore your real backup (or start fresh) afterwards, because restoring replaces what's saved.
+**To see an example first:** restore `data/example-backup.json`. It holds the maintainer's real statuses and notes for six calls on the built-in list (watching, preparing, submitted, not applying). Restore your own backup (or start fresh) afterwards, because restoring replaces what's saved.
 
 ### 3. Full copy of the repo (to maintain or edit the list)
 
@@ -138,7 +138,7 @@ The list is maintained in the Grant Radar dashboard on claude.ai and refreshed w
 |---|---|
 | `index.html` | The app. It's one self-contained file with the call list built in. On GitHub Pages or a local server it also loads `data/grants.json`, so updating that file updates the app. |
 | `data/grants.json` | The call list (one object per call: `call`, `funder`, `topics`, `kind`, `applicants`, `route`, `deadline`, `certainty`, `priority`, `url`, …). `kind` is one of Research grant / Conference / travel / Training / lab visit; `applicants` is a `;`-separated list of who can apply. |
-| `data/example-backup.json` | A made-up backup (statuses, notes, one hand-added call, one custom topic). Restore it in the app to see how tracking looks. |
+| `data/example-backup.json` | Example backup with the maintainer's real statuses and notes. Restore it in the app to see how tracking looks. |
 | `tools/` | `app.template.html` (the app's source) plus `build.py`, which embeds `grants.json` into `index.html` as-is. |
 | `claude-artifacts/grant-radar/` | Backup of the claude.ai dashboard page (`index.html`) and its data settings (`store.json`). Runs only inside claude.ai. |
 | `claude-artifacts/grant-tracker/` | Backup of the original claude.ai tracker page. Runs only inside claude.ai. |
