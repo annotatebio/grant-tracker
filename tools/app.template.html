@@ -149,6 +149,10 @@ footer { color: var(--muted); font-size: .8rem; }
     </div>
   </header>
 
+  <div class="listbar" id="exBar" hidden>
+    <span>The statuses and notes you see are an <b>example</b>: the maintainer's own tracking. Change anything and it's saved in this browser as yours.</span>
+    <button class="btn" type="button" id="exClear">Clear the examples and start my own</button>
+  </div>
   <div class="listbar" id="listBar" hidden>
     <span id="listInfo"></span>
     <button class="btn" type="button" id="listReset">Back to the built-in list</button>
@@ -288,6 +292,7 @@ footer { color: var(--muted); font-size: .8rem; }
 </div>
 
 <script id="grants-data" type="application/json">/*__DATA__*/</script>
+<script id="example-data" type="application/json">/*__EXAMPLE__*/</script>
 <script>
 (function () {
   "use strict";
@@ -330,6 +335,13 @@ footer { color: var(--muted); font-size: .8rem; }
     custom: Array.isArray(t && t.custom) ? t.custom.filter(x => x && x.name).map(x => ({ name: String(x.name).slice(0, 60), words: (Array.isArray(x.words) ? x.words : []).map(w => String(w).trim().toLowerCase()).filter(Boolean) })) : [] });
   let store = { track: {}, mine: [], topics: cleanTopics() };
   try { const raw = localStorage.getItem(KEY); if (raw) { const s = JSON.parse(raw); if (s && typeof s === "object") store = { track: s.track || {}, mine: Array.isArray(s.mine) ? s.mine : [], topics: cleanTopics(s.topics) }; } } catch (e) {}
+  // first visit (nothing saved in this browser): show the example tracking
+  try {
+    if (!localStorage.getItem(KEY)) {
+      const ex = JSON.parse(document.getElementById("example-data").textContent || "null");
+      if (ex && typeof ex.track === "object") store = { track: ex.track, mine: Array.isArray(ex.mine) ? ex.mine : [], topics: cleanTopics(ex.topics), example: true };
+    }
+  } catch (e) {}
   function save() { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) { toast("Couldn't save in this browser (private mode?)"); } }
   const track = id => store.track[id] || {};
   const statusOf = id => track(id).status || "Not tracked";
@@ -657,7 +669,7 @@ footer { color: var(--muted); font-size: .8rem; }
   }
   function restoreFrom(text) {
     try { const d = JSON.parse(text); if (!d || typeof d.track !== "object") throw 0;
-      store = { track: d.track || {}, mine: Array.isArray(d.mine) ? d.mine : [], topics: cleanTopics(d.topics) }; save(); setOwnList(cleanList(d.list)); toast("Your data was restored"); return true;
+      store = { track: d.track || {}, mine: Array.isArray(d.mine) ? d.mine : [], topics: cleanTopics(d.topics) }; save(); $("#exBar").hidden = true; setOwnList(cleanList(d.list)); toast("Your data was restored"); return true;
     } catch (err) { toast("That isn't a Grant Radar backup."); return false; }
   }
   if (ARTIFACT) {
@@ -740,6 +752,9 @@ footer { color: var(--muted); font-size: .8rem; }
     toast(`Loaded ${rows.length} calls`);
   });
   $("#listReset").addEventListener("click", () => { setOwnList(null); toast("Back to the built-in list"); });
+
+  $("#exBar").hidden = !store.example;
+  $("#exClear").addEventListener("click", () => { store = { track: {}, mine: [], topics: cleanTopics() }; save(); $("#exBar").hidden = true; renderChips(); renderTopics(); render(); toast("Examples cleared. Your tracking starts here."); });
 
   renderList_bar(); renderChips(); render(); tryFresh();
 })();
