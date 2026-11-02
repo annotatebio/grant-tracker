@@ -7,7 +7,8 @@ Grant Radar lists research-funding calls in gut and food microbiome, diet × gut
 - **Overview:** two ranked shortlists of announced calls (calls you can apply for yourself, and team & consortium calls someone else leads), a separate list of *predicted* calls that aren't announced yet, and a timeline of deadlines by topic (hollow dots = predicted dates).
 - **Type and who-can-apply filters:** narrow everything to research grants, conference & travel funding or training & lab visits, and to who may apply (PhD student, early-career PhD, senior PI, consortium, industry, …).
 - **All calls:** filter by topic, route or status, hide predicted calls, search, and open any call for its type, who can apply, eligibility, deadline notes and links.
-- **My topics:** switch off topics you don't need (their calls disappear everywhere), or add your own topic with a few keywords. For example, *Fungi & yeasts* = `fungal, yeast, candida, mycology` tags every call that mentions any of them.
+- **Find calls for my field:** describe your own search (topics, country, career stage, types of funding). The app writes a prompt for Claude; Claude searches the web and gives you a `grants.json`; you load it back into the app. Your list then replaces the built-in one in your browser.
+- **My topics:** filter the current list: switch off topics you don't need (their calls disappear everywhere), or add your own topic with a few keywords. This doesn't find new calls; use *Find calls for my field* for that. For example, *Fungi & yeasts* = `fungal, yeast, candida, mycology` tags every call that mentions any of them.
 - **Your own tracking:** set a status (Watching, Preparing, Submitted, …), keep notes and add your own calls. All of this is saved **in your browser only**. Use *Back up my data* / *Restore* to move it to another browser or computer.
 - **Export deadlines (.ics):** imports into Google Calendar, Outlook or Apple Calendar.
 
@@ -83,9 +84,18 @@ GitHub Pages is free for public repositories; for a private one it needs a paid 
 
 ## Customize what grants it searches for
 
-There are two levels:
+There are three levels.
 
-**In the app, for one person.** Use **My topics**: switch off topics you don't need, and add keyword topics for what you care about. Nothing else changes, and it works on the existing list. Examples:
+**1. Your own list, from inside the app (anyone, no setup).** Click **Find calls for my field**:
+
+1. Fill in your topics (separated by semicolons), the country of your institution, your career stage and the types of funding. For example: *Plant microbiome; Soil ecology; Bioinformatics*, *Germany*, *Postdoc*.
+2. **Copy the prompt** and paste it into a new chat on [claude.ai](https://claude.ai) with web search switched on.
+3. Save the `grants.json` file Claude gives you. If it shows the JSON as text instead, copy it into a plain-text file and name it `grants.json`.
+4. Back in the app: **Load the call list Claude made…** and pick the file.
+
+The app now shows your list (a bar at the top says so), with your topics as the topic filters. It's saved in your browser and included in *Back up my data*. **Back to the built-in list** switches back. Your statuses and notes are kept either way. Repeat every few weeks, since calls open and close.
+
+**2. Filter the list you have (My topics).** Switch off topics you don't need, and add keyword topics for what you care about. This only filters the calls already in the list. Examples:
 
 | Topic name | Keywords |
 |---|---|
@@ -96,7 +106,7 @@ There are two levels:
 
 Keywords match any part of a word, so `metagenom` finds both *metagenomics* and *metagenome*.
 
-**In the list itself, for a new field or country.** Edit **Your search** at the top of `refresh-prompt.md` and use it for the weekly refresh (see *The claude.ai dashboard and weekly refresh*). The topics you list there become the app's topics, and the app picks them up automatically. Examples:
+**3. The shared list, refreshed weekly (maintainers).** Edit **Your search** at the top of `refresh-prompt.md` and use it for the weekly refresh (see *The claude.ai dashboard and weekly refresh*). The topics you list there become the app's topics, and the app picks them up automatically. Examples:
 
 ```
 Topics:           Plant microbiome; Soil ecology; Bioinformatics; General

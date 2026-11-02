@@ -97,6 +97,9 @@ ol.rank .sub2 { grid-column: 2 / -1; display: flex; flex-wrap: wrap; gap: 4px 8p
 .filters { display: flex; flex-direction: column; gap: 8px; }
 .filters .lbl { font-size: .75rem; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
 .panel.pred { border-style: dashed; }
+.listbar { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; background: var(--accent-soft); border-radius: var(--r); padding: 10px 14px; font-size: .9rem; }
+fieldset.types { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 6px 16px; }
+fieldset.types legend { font-size: .8rem; color: var(--muted); padding: 0; margin-bottom: 4px; }
 .chip.off { opacity: .55; text-decoration: line-through; }
 .chip .x { margin-left: 6px; color: var(--muted); } .badge.mine { border-color: var(--accent); color: var(--accent); }
 select.st { padding: 4px 6px; border: 1px solid var(--line); border-radius: var(--r); background: var(--panel); font-size: .82rem; }
@@ -137,6 +140,7 @@ footer { color: var(--muted); font-size: .8rem; }
     </div>
     <div class="actions">
       <button class="btn primary" id="addBtn" type="button">Add a call</button>
+      <button class="btn" id="findBtn" type="button" aria-expanded="false" aria-controls="findPanel">Find calls for my field</button>
       <button class="btn" id="topicsBtn" type="button" aria-expanded="false" aria-controls="topicsPanel">My topics</button>
       <button class="btn" id="icsBtn" type="button">Export deadlines (.ics)</button>
       <button class="btn" id="exportBtn" type="button">Back up my data</button>
@@ -145,10 +149,15 @@ footer { color: var(--muted); font-size: .8rem; }
     </div>
   </header>
 
+  <div class="listbar" id="listBar" hidden>
+    <span id="listInfo"></span>
+    <button class="btn" type="button" id="listReset">Back to the built-in list</button>
+  </div>
+
   <section class="kpis" aria-label="Summary">
     <div class="kpi"><div class="n" id="k-open">—</div><div class="l">Calls with a deadline ahead</div></div>
     <div class="kpi"><div class="n" id="k-30">—</div><div class="l">Closing in the next 30 days</div></div>
-    <div class="kpi"><div class="n" id="k-lead">—</div><div class="l">A PhD student can lead</div></div>
+    <div class="kpi"><div class="n" id="k-lead">—</div><div class="l">You can lead yourself</div></div>
     <div class="kpi"><div class="n" id="k-mine">—</div><div class="l">On my list (watching or preparing)</div></div>
     <div class="kpi"><div class="n" id="k-checked">—</div><div class="l">List last checked</div></div>
   </section>
@@ -160,9 +169,34 @@ footer { color: var(--muted); font-size: .8rem; }
     <div class="actions" style="margin-top:8px"><button class="btn primary" id="restoreGo" type="button" hidden>Restore</button><button class="btn" id="backupClose" type="button">Close</button></div>
   </section>
 
+  <section class="panel" id="findPanel" hidden aria-labelledby="findTitle">
+    <h2 id="findTitle">Find calls for my field</h2>
+    <p class="hint">The app can't search the web by itself, but Claude can. Describe your search, copy the prompt, paste it into a new Claude chat (claude.ai, with web search on), save the JSON file it gives you, and load it here. Your list stays in this browser and is included in your backup. Repeat every few weeks to keep it current.</p>
+    <form id="findForm" class="form" novalidate>
+      <label class="wide">Topics, separated by semicolons<input id="s-topics" maxlength="400" placeholder="e.g. Plant microbiome; Soil ecology; Bioinformatics; General"></label>
+      <label>Your institution is in<input id="s-country" maxlength="80" value="Poland"></label>
+      <label>You are<select id="s-who"><option>PhD student</option><option>Early-career researcher (PhD within ~7 years)</option><option>Postdoc</option><option>Established researcher / PI</option></select></label>
+      <label class="wide">Funders to check (optional)<input id="s-funders" maxlength="400" placeholder="Leave empty to let Claude pick national funders, EU programmes and foundations"></label>
+      <fieldset class="wide types"><legend>Types of funding</legend>
+        <label class="chk"><input type="checkbox" id="s-k1" checked> Research grants</label>
+        <label class="chk"><input type="checkbox" id="s-k2" checked> Conference &amp; travel funding</label>
+        <label class="chk"><input type="checkbox" id="s-k3" checked> Training &amp; lab visits</label>
+      </fieldset>
+      <label class="wide">Leave out (optional)<input id="s-skip" maxlength="300" placeholder="e.g. postdoc-only fellowships"></label>
+    </form>
+    <div class="actions" style="margin-top:12px;align-items:center">
+      <button class="btn primary" type="button" id="copyPrompt">1. Copy the prompt</button>
+      <button class="btn" type="button" id="loadList">2. Load the call list Claude made…</button>
+      <input type="file" id="listFile" accept="application/json,.json" hidden>
+      <button class="btn" type="button" id="findClose">Close</button>
+      <span class="err" id="findErr" role="alert"></span>
+    </div>
+    <textarea id="promptText" rows="8" readonly hidden aria-label="Prompt to paste into Claude" style="width:100%;margin-top:10px;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r);background:var(--bg);font-family:var(--mono);font-size:.78rem"></textarea>
+  </section>
+
   <section class="panel" id="topicsPanel" hidden aria-labelledby="topicsTitle">
     <h2 id="topicsTitle">My topics</h2>
-    <p class="hint">Choose the topics you care about. Calls that are only in topics you switch off are hidden everywhere. Add your own topic with a few keywords: any call whose name, funder, summary or eligibility mentions one of them is tagged with it. Saved in this browser and included in your backup.</p>
+    <p class="hint">Choose the topics you care about. Calls that are only in topics you switch off are hidden everywhere. Add your own topic with a few keywords: any call whose name, funder, summary or eligibility mentions one of them is tagged with it. Saved in this browser and included in your backup. This only filters the calls already in the list; to get calls for a different field, use <b>Find calls for my field</b>.</p>
     <div class="chips" id="topicToggles" role="group" aria-label="Topics to show"></div>
     <form id="topicForm" class="form" novalidate>
       <label>New topic<input id="t-name" maxlength="60" placeholder="e.g. Plant microbiome"></label>
@@ -214,7 +248,7 @@ footer { color: var(--muted); font-size: .8rem; }
     <div class="cols">
       <div class="panel">
         <h2>You can apply yourself</h2>
-        <p class="hint">Open to a PhD student as applicant (some with conditions). Announced calls only, ranked by topic fit, feasibility and time left.</p>
+        <p class="hint">Calls you can lead yourself (some with conditions). Announced calls only, ranked by topic fit, feasibility and time left.</p>
         <ol class="rank" id="rank-lead"></ol>
       </div>
       <div class="panel">
@@ -302,8 +336,37 @@ footer { color: var(--muted); font-size: .8rem; }
   function setTrack(id, patch) { store.track[id] = Object.assign({}, track(id), patch, { updated: new Date().toISOString() }); save(); }
 
   // ---- data ----
-  let radar = [];
-  try { radar = JSON.parse(document.getElementById("grants-data").textContent); } catch (e) { radar = []; }
+  let builtin = [];
+  try { builtin = JSON.parse(document.getElementById("grants-data").textContent); } catch (e) { builtin = []; }
+  const LEDE = document.getElementById("lede").textContent;
+  // a call list the person loaded themselves (from "Find calls for my field"), kept in this browser
+  let ownList = null;
+  try { const raw = localStorage.getItem(KEY + ":list"); if (raw) ownList = cleanList(JSON.parse(raw)); } catch (e) { ownList = null; }
+  let radar = ownList ? ownList.rows : builtin;
+  function cleanRows(d) {
+    if (d && !Array.isArray(d)) d = d.grants || d.rows || d.data || d.results || d.calls;
+    if (!Array.isArray(d)) return null;
+    const str = v => v == null ? "" : String(v).slice(0, 4000);
+    const rows = d.filter(r => r && typeof r === "object" && r.call).map(r => {
+      const o = {}; Object.keys(r).forEach(k => { o[k] = k === "priority" ? (Number.isFinite(+r[k]) ? +r[k] : undefined) : str(r[k]); });
+      return o;
+    });
+    return rows.length ? rows : null;
+  }
+  function cleanList(x) { if (!x || typeof x !== "object") return null; const rows = cleanRows(x.rows); return rows ? { name: String(x.name || "My call list").slice(0, 120), loaded: String(x.loaded || ""), rows } : null; }
+  function setOwnList(list) {
+    ownList = list; radar = list ? list.rows : builtin;
+    try { list ? localStorage.setItem(KEY + ":list", JSON.stringify(list)) : localStorage.removeItem(KEY + ":list"); } catch (e) { toast("Couldn't save the list in this browser (private mode?)"); }
+    ui.topics.clear(); fillTopicSelect(); renderChips(); renderTopics(); renderList_bar(); render();
+  }
+  function renderList_bar() {
+    $("#listBar").hidden = !ownList;
+    if (ownList) {
+      const tops = [...new Set(ownList.rows.flatMap(dataTopicsOf))].slice(0, 6).join(", ");
+      $("#listInfo").textContent = `Showing your own call list: ${ownList.rows.length} calls${ownList.loaded ? ", loaded " + fmt(ownList.loaded.slice(0, 10)) : ""}.`;
+      $("#lede").textContent = "Your own call list" + (tops ? ": " + tops : "") + ". Your statuses and notes stay in this browser only.";
+    } else $("#lede").textContent = LEDE;
+  }
   // every topic in the data (known ones in their usual order, then any others), then my own topics
   function allTopics() {
     const seen = new Set(radar.concat(store.mine).flatMap(dataTopicsOf));
@@ -318,8 +381,8 @@ footer { color: var(--muted); font-size: .8rem; }
     return r.concat(store.mine.map(c => Object.assign({ source: "mine" }, c)));
   }
   async function tryFresh() {
-    if (ARTIFACT || !/^https?:$/.test(location.protocol)) return;
-    try { const res = await fetch("data/grants.json", { cache: "no-cache" }); if (!res.ok) return; const d = await res.json(); if (Array.isArray(d) && d.length) { radar = d; fillTopicSelect(); renderChips(); render(); } } catch (e) {}
+    if (ARTIFACT || ownList || !/^https?:$/.test(location.protocol)) return;
+    try { const res = await fetch("data/grants.json", { cache: "no-cache" }); if (!res.ok) return; const d = await res.json(); if (Array.isArray(d) && d.length && !ownList) { builtin = d; radar = d; fillTopicSelect(); renderChips(); render(); } } catch (e) {}
   }
 
   // ---- UI state ----
@@ -588,13 +651,13 @@ footer { color: var(--muted); font-size: .8rem; }
     document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
   }
   async function copyBackup() {
-    const text = JSON.stringify({ app: "grant-radar", version: 1, exported: new Date().toISOString(), ...store });
+    const text = JSON.stringify({ app: "grant-radar", version: 1, exported: new Date().toISOString(), ...store, ...(ownList ? { list: ownList } : {}) });
     try { await navigator.clipboard.writeText(text); toast("Backup copied — paste it into a note or email to keep it"); }
     catch (e) { const box = $("#backupBox"); box.hidden = false; const ta = $("#backupText"); ta.value = text; ta.focus(); ta.select(); toast("Copy the selected text to keep your backup"); }
   }
   function restoreFrom(text) {
     try { const d = JSON.parse(text); if (!d || typeof d.track !== "object") throw 0;
-      store = { track: d.track || {}, mine: Array.isArray(d.mine) ? d.mine : [], topics: cleanTopics(d.topics) }; save(); renderChips(); renderTopics(); render(); toast("Your data was restored"); return true;
+      store = { track: d.track || {}, mine: Array.isArray(d.mine) ? d.mine : [], topics: cleanTopics(d.topics) }; save(); setOwnList(cleanList(d.list)); toast("Your data was restored"); return true;
     } catch (err) { toast("That isn't a Grant Radar backup."); return false; }
   }
   if (ARTIFACT) {
@@ -605,7 +668,7 @@ footer { color: var(--muted); font-size: .8rem; }
     $("#backupClose").addEventListener("click", () => { $("#backupBox").hidden = true; $("#restoreGo").hidden = true; });
     $("#foot").textContent = "Deadlines were checked on funder or university pages; rows marked “Predicted” are estimated from earlier rounds. Always confirm on the call page before applying. Your statuses and notes are stored only in this browser. Use “Copy backup” to keep a copy, and each call's “Add to Google Calendar” link for reminders.";
   }
-  if (!ARTIFACT) $("#exportBtn").addEventListener("click", () => download("grant-radar-my-data.json", JSON.stringify({ app: "grant-radar", version: 1, exported: new Date().toISOString(), ...store }, null, 2), "application/json"));
+  if (!ARTIFACT) $("#exportBtn").addEventListener("click", () => download("grant-radar-my-data.json", JSON.stringify({ app: "grant-radar", version: 1, exported: new Date().toISOString(), ...store, ...(ownList ? { list: ownList } : {}) }, null, 2), "application/json"));
   if (!ARTIFACT) $("#importBtn").addEventListener("click", () => $("#importFile").click());
   $("#importFile").addEventListener("change", async e => {
     const f = e.target.files[0]; if (!f) return;
@@ -627,7 +690,58 @@ footer { color: var(--muted); font-size: .8rem; }
     toast(mine.length ? `Exported ${pick.length} deadlines from your list` : `Exported all ${pick.length} upcoming deadlines`);
   });
 
-  renderChips(); render(); tryFresh();
+  // ---- find calls for my field ----
+  function buildPrompt() {
+    const topics = $("#s-topics").value.split(";").map(t => t.trim()).filter(Boolean);
+    const country = $("#s-country").value.trim() || "Poland", who = $("#s-who").value;
+    const types = [["#s-k1", "Research grant"], ["#s-k2", "Conference / travel"], ["#s-k3", "Training / lab visit"]].filter(([id]) => $(id).checked).map(([, k]) => k);
+    if (!topics.length) return null;
+    const funders = $("#s-funders").value.trim() || `the main national research funders in ${country}, EU programmes (Horizon Europe, ERC, MSCA, European Partnerships) and relevant foundations and learned societies`;
+    const skip = $("#s-skip").value.trim();
+    return [
+      "Find current research-funding calls for me and give me the result as one JSON file named grants.json that I can load into my grant tracker.",
+      "",
+      "My search:",
+      `- Topics: ${topics.join("; ")}`,
+      `- My institution is in: ${country}`,
+      `- I am a: ${who}`,
+      `- Funders to check: ${funders}`,
+      `- Types of funding: ${(types.length ? types : ["Research grant"]).join("; ")}`,
+      skip ? `- Leave out: ${skip}` : "",
+      "",
+      `Search funder, university and research-office pages on the web. Include only calls open to someone at an institution in ${country}. Include calls I can lead myself and calls where I would join a team led by someone else (a PI, a consortium or a company) and could be funded from the project. Also include the next round of recurring calls that are not announced yet, dated from earlier rounds. Keep uncertain ones and say what to check.`,
+      "",
+      "Output a JSON array, one object per call, with these fields (all strings except priority):",
+      `call, funder, funder_type, topics (";"-separated, only from my topics), kind (exactly one of: ${(types.length ? types : ["Research grant"]).map(t => `"${t}"`).join(" | ")}), applicants (";"-separated, from: PhD student; Early-career PhD; Mid-career PhD; Any PhD holder; Senior PI; Consortium; Industry partners welcome; Industry-led), region, eligibility, amount, opens (YYYY-MM-DD or ""), deadline (YYYY-MM-DD), deadline_note, certainty (Confirmed / Tentative / Expected; Expected = not yet announced, estimated from earlier rounds), summary (one sentence), url (the call page), last_checked (today, YYYY-MM-DD), route ("You can lead" / "You can lead (conditions)" / "Via PI / postdoc", judged for me as a ${who}), lead_requires, priority (a number; rank calls with route "You can lead…" and the others separately, 1 = best fit), priority_note (one sentence: why it fits and the next step).`,
+      "",
+      "Never invent dates. Leave out calls that closed more than 30 days ago. Keep it under about 60 calls. Give me the JSON as a downloadable grants.json file (or, if you can't make files, as a single JSON code block I can save as grants.json)."
+    ].filter((l, i, a) => l !== "" || a[i - 1] !== "").join("\n");
+  }
+  $("#findBtn").addEventListener("click", () => {
+    const p = $("#findPanel"); p.hidden = !p.hidden; $("#findBtn").setAttribute("aria-expanded", String(!p.hidden));
+    if (!p.hidden) { if (!$("#s-topics").value) $("#s-topics").value = allTopics().filter(t => !store.topics.custom.some(c => c.name === t)).join("; "); $("#s-topics").focus(); }
+  });
+  $("#findClose").addEventListener("click", () => { $("#findPanel").hidden = true; $("#findBtn").setAttribute("aria-expanded", "false"); });
+  $("#copyPrompt").addEventListener("click", async () => {
+    const text = buildPrompt();
+    if (!text) return void ($("#findErr").textContent = "Add at least one topic.");
+    $("#findErr").textContent = ""; const ta = $("#promptText"); ta.hidden = false; ta.value = text;
+    try { await navigator.clipboard.writeText(text); toast("Prompt copied — paste it into a new Claude chat"); }
+    catch (e) { ta.focus(); ta.select(); toast("Copy the selected prompt and paste it into Claude"); }
+  });
+  $("#loadList").addEventListener("click", () => $("#listFile").click());
+  $("#listFile").addEventListener("change", async e => {
+    const f = e.target.files[0]; if (!f) return; e.target.value = "";
+    let rows = null; try { rows = cleanRows(JSON.parse(await f.text())); } catch (err) { rows = null; }
+    if (!rows) return void ($("#findErr").textContent = "That file isn't a call list. It should be a JSON list of calls, each with at least a \"call\" field.");
+    $("#findErr").textContent = "";
+    setOwnList({ name: f.name, loaded: new Date().toISOString(), rows });
+    $("#findPanel").hidden = true; $("#findBtn").setAttribute("aria-expanded", "false");
+    toast(`Loaded ${rows.length} calls`);
+  });
+  $("#listReset").addEventListener("click", () => { setOwnList(null); toast("Back to the built-in list"); });
+
+  renderList_bar(); renderChips(); render(); tryFresh();
 })();
 </script>
 </body>
