@@ -1,6 +1,6 @@
 # Grant Radar
 
-**Open the app:** https://annotatebio.github.io/grant-tracker/ (once GitHub Pages is switched on), or download `index.html` and double-click it.
+**Open the app:** https://annotatebio.github.io/grant-tracker/ (or download `index.html` and double-click it to use it offline).
 
 Grant Radar lists research-funding calls in gut and food microbiome, diet × gut, gut mycobiome, bioinformatics and general schemes. Every call is open to researchers at Polish institutions, and the list shows which calls a PhD student can lead and which need someone else (a PI, a consortium or a company) to apply.
 
@@ -28,7 +28,7 @@ Pick the option that matches what the person needs. Nothing needs installing for
 
 The call list is built into the file, so it works offline. To get a newer list, replace the file with a newer `index.html`. Their statuses and notes are kept as long as they open it from the same place in the same browser. Saving the new file under the same name in the same folder is enough.
 
-If the app is published on GitHub Pages (see below), they can simply open the link instead, and they'll always see the latest list.
+Or they simply open https://annotatebio.github.io/grant-tracker/ and always see the latest list. Their statuses and notes are saved in that browser too.
 
 ### 2. Move your own statuses and notes to another computer
 
