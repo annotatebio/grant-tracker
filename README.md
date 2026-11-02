@@ -38,7 +38,7 @@ Or they simply open https://annotatebio.github.io/grant-tracker/ and always see 
 
 Restore **replaces** whatever is saved in that browser, so do it before you start tracking on the new computer. Each person's tracking is separate. A colleague can restore your backup to start from your notes, but changes don't sync afterwards. A backup also carries your *My topics* settings.
 
-**The example:** on a first visit, the app shows the maintainer's real statuses and notes for six calls (from `data/example-backup.json`), with a bar saying so. Change anything and it's saved as yours. **Clear the examples and start my own** empties it. Restoring a backup also replaces the examples.
+**The example:** **Show example** (the first button) loads the maintainer's real statuses and notes for six calls (from `data/example-backup.json`) and resets the topic filters. A first visit shows it automatically. If you already have your own statuses, the button asks you to click again before replacing them, so back up first. Change anything and it's saved as yours. **Clear the examples and start my own** empties it.
 
 ### 3. Full copy of the repo (to maintain or edit the list)
 

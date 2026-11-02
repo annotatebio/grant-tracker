@@ -115,6 +115,7 @@ dl.facts dt { color: var(--muted); } dl.facts dd { margin: 0; overflow-wrap: any
 .empty { border: 1px dashed var(--line); border-radius: var(--r); padding: 28px; text-align: center; color: var(--muted); background: var(--panel); }
 .form { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: 12px; margin-top: 12px; }
 .form label { display: flex; flex-direction: column; gap: 4px; font-size: .8rem; color: var(--muted); }
+.form label.chk { flex-direction: row; align-items: center; gap: 6px; font-size: .85rem; }
 .form input, .form select, .form textarea { padding: 7px 9px; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg); }
 .form .wide { grid-column: 1 / -1; }
 .err { color: var(--bad); font-size: .85rem; }
@@ -139,7 +140,8 @@ footer { color: var(--muted); font-size: .8rem; }
       <p class="sub" id="lede">Funding calls in gut &amp; food microbiome, diet × gut, gut mycobiome and bioinformatics that researchers at Polish institutions can apply to. Your statuses and notes stay in this browser only.</p>
     </div>
     <div class="actions">
-      <button class="btn primary" id="addBtn" type="button">Add a call</button>
+      <button class="btn primary" id="exampleBtn" type="button">Show example</button>
+      <button class="btn" id="addBtn" type="button">Add a call</button>
       <button class="btn" id="findBtn" type="button" aria-expanded="false" aria-controls="findPanel">Find calls for my field</button>
       <button class="btn" id="topicsBtn" type="button" aria-expanded="false" aria-controls="topicsPanel">My topics</button>
       <button class="btn" id="icsBtn" type="button">Export deadlines (.ics)</button>
@@ -152,6 +154,10 @@ footer { color: var(--muted); font-size: .8rem; }
   <div class="listbar" id="exBar" hidden>
     <span>The statuses and notes you see are an <b>example</b>: the maintainer's own tracking. Change anything and it's saved in this browser as yours.</span>
     <button class="btn" type="button" id="exClear">Clear the examples and start my own</button>
+  </div>
+  <div class="listbar" id="hiddenBar" hidden>
+    <span id="hiddenInfo"></span>
+    <button class="btn" type="button" id="showAllTopics">Show all topics</button>
   </div>
   <div class="listbar" id="listBar" hidden>
     <span id="listInfo"></span>
@@ -334,7 +340,7 @@ footer { color: var(--muted); font-size: .8rem; }
   const cleanTopics = t => ({ hidden: Array.isArray(t && t.hidden) ? t.hidden.map(String) : [],
     custom: Array.isArray(t && t.custom) ? t.custom.filter(x => x && x.name).map(x => ({ name: String(x.name).slice(0, 60), words: (Array.isArray(x.words) ? x.words : []).map(w => String(w).trim().toLowerCase()).filter(Boolean) })) : [] });
   let store = { track: {}, mine: [], topics: cleanTopics() };
-  try { const raw = localStorage.getItem(KEY); if (raw) { const s = JSON.parse(raw); if (s && typeof s === "object") store = { track: s.track || {}, mine: Array.isArray(s.mine) ? s.mine : [], topics: cleanTopics(s.topics) }; } } catch (e) {}
+  try { const raw = localStorage.getItem(KEY); if (raw) { const s = JSON.parse(raw); if (s && typeof s === "object") store = { track: s.track || {}, mine: Array.isArray(s.mine) ? s.mine : [], topics: cleanTopics(s.topics), example: !!s.example }; } } catch (e) {}
   // first visit (nothing saved in this browser): show the example tracking
   try {
     if (!localStorage.getItem(KEY)) {
@@ -568,6 +574,11 @@ footer { color: var(--muted); font-size: .8rem; }
 
   function render() {
     const calls = allCalls().filter(wanted);
+    const hiddenAll = allCalls().length - calls.length;
+    $("#hiddenBar").hidden = !store.topics.hidden.length || !hiddenAll;
+    if (store.topics.hidden.length) $("#hiddenInfo").textContent = calls.length
+      ? `${hiddenAll} call${hiddenAll === 1 ? " is" : "s are"} hidden because you switched off ${store.topics.hidden.join(", ")} in My topics.`
+      : "No calls are shown: every topic is switched off in My topics.";
     renderKpis(calls);
     $("#tab-over").setAttribute("aria-selected", String(ui.view === "over"));
     $("#tab-all").setAttribute("aria-selected", String(ui.view === "all"));
@@ -754,6 +765,22 @@ footer { color: var(--muted); font-size: .8rem; }
   $("#listReset").addEventListener("click", () => { setOwnList(null); toast("Back to the built-in list"); });
 
   $("#exBar").hidden = !store.example;
+  $("#showAllTopics").addEventListener("click", () => { store.topics.hidden = []; save(); renderTopics(); renderChips(); render(); toast("Showing all topics"); });
+  // "Show example": the maintainer's own tracking on the built-in list
+  const exampleBtn = $("#exampleBtn");
+  let exampleData = null; try { exampleData = JSON.parse(document.getElementById("example-data").textContent || "null"); } catch (e) {}
+  if (!exampleData || typeof exampleData.track !== "object") exampleBtn.hidden = true;
+  exampleBtn.addEventListener("click", () => {
+    const hasOwn = !store.example && (Object.keys(store.track).length || store.mine.length);
+    if (hasOwn && !exampleBtn.dataset.ok) { exampleBtn.dataset.ok = 1; exampleBtn.textContent = "Replace my data with the example?"; toast("Back up your data first if you want to keep it, then click again."); return; }
+    delete exampleBtn.dataset.ok; exampleBtn.textContent = "Show example";
+    store = { track: JSON.parse(JSON.stringify(exampleData.track)), mine: Array.isArray(exampleData.mine) ? exampleData.mine : [], topics: cleanTopics(exampleData.topics), example: true };
+    save(); if (ownList) setOwnList(null);
+    ui.kinds.clear(); ui.whos.clear(); ui.topics.clear(); ui.hidePred = false; $("#hidePred").checked = false;
+    $("#exBar").hidden = false; renderChips(); renderTopics(); render();
+    $("#exBar").scrollIntoView({ behavior: "smooth", block: "nearest" });
+    toast("Showing the example: six tracked calls");
+  });
   $("#exClear").addEventListener("click", () => { store = { track: {}, mine: [], topics: cleanTopics() }; save(); $("#exBar").hidden = true; renderChips(); renderTopics(); render(); toast("Examples cleared. Your tracking starts here."); });
 
   renderList_bar(); renderChips(); render(); tryFresh();
